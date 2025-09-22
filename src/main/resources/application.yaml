@@ -1,0 +1,4 @@
+app:
+  jwt:
+    key: ${JWT_SECRET_KEY}
+    token-expiration : 24
