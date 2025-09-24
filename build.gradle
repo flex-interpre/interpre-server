@@ -39,6 +39,12 @@ dependencies {
 
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+    // DB
+    implementation 'org.postgresql:postgresql'
+
+    // dotenv
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 }
 
 tasks.named('test') {
