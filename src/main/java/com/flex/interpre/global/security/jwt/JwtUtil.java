@@ -3,6 +3,8 @@ package com.flex.interpre.global.security.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.flex.interpre.domain.auth.exception.AuthExceptions;
 import com.flex.interpre.global.property.JwtProperty;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -41,11 +43,13 @@ public class JwtUtil {
             return false;
         }
 
-        //TODO: 추후 exception handler 만들면 TokenExpirationException 추가
         try{
 
             JWT.require(algorithm()).build().verify(token);
             return true;
+        }catch (TokenExpiredException e){
+
+            throw AuthExceptions.ACCESS_TOKEN_EXPIRED.toException();
         } catch (Exception e){
 
             return false;
