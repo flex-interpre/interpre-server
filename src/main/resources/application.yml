@@ -12,3 +12,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect # PostgreSQL 문법 지정
     show-sql: true # 로그 확인용 sql 쿼리문 확인
+app:
+  jwt:
+    key: ${JWT_SECRET_KEY}
+    token-expiration : 24
+
