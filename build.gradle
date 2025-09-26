@@ -43,6 +43,9 @@ dependencies {
     //OAuth
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+    //Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     // DB
     implementation 'org.postgresql:postgresql'
 
