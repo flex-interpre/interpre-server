@@ -3,6 +3,7 @@ package com.flex.interpre.global.config;
 import com.flex.interpre.domain.auth.handler.CustomOAuth2SuccessHandler;
 import com.flex.interpre.domain.auth.service.CustomOAuth2UserService;
 import com.flex.interpre.global.security.authentication.CustomAuthenticationEntryPoint;
+import com.flex.interpre.global.security.authentication.CustomOAuth2AuthorizationRequestResolver;
 import com.flex.interpre.global.security.jwt.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -23,15 +24,18 @@ public class SecurityConfig {
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomOAuth2AuthorizationRequestResolver authorizationRequestResolver;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         
-        //TODO: ApiResponse 생기면 CustomEntryPoint 추가
         return http.cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth -> oauth
+                        .authorizationEndpoint(auth->auth
+                                .baseUri("/api/oauth2/authorization")
+                                .authorizationRequestResolver(authorizationRequestResolver))
                         .userInfoEndpoint(c->c.userService(customOAuth2UserService))
                         .successHandler(customOAuth2SuccessHandler))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

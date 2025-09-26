@@ -13,6 +13,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,11 +30,13 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        String roleParam = request.getParameter("role");
+        String state = request.getParameter("state");
+        //role 파라미터 가져오기
+        String roleParam = extractRoleFromState(state);
+
         User.Role role = User.Role.valueOf(
                 roleParam != null ? roleParam.toUpperCase() : "JOB_SEEKER"
         );
-
 
         Optional<User> optionalUser = userRepository.findByGoogleId((String) oAuth2User.getAttributes().get("sub"));
 
@@ -81,5 +85,26 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         cookie.setMaxAge(300); // 짧게 5분
 
         response.addCookie(cookie);
+    }
+
+    private String extractRoleFromState(String state) {
+        if (state == null) {
+            return null;
+        }
+
+        try {
+            String decodedState = URLDecoder.decode(state, StandardCharsets.UTF_8);
+
+            // role 부분만 파싱
+            if (decodedState.contains("|role:")) {
+                String[] parts = decodedState.split("\\|role:");
+                if (parts.length > 1) {
+                    return parts[1];
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        return null;
     }
 }
