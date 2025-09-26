@@ -43,6 +43,11 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         boolean firstLogin = optionalUser.isEmpty();
         User user = optionalUser.orElseGet(() -> from(oAuth2User.getAttributes(), role));
 
+        if (role != user.getRole()){
+            response.sendRedirect("http://localhost:3000/fail");
+            return;
+        }
+
 
         String accessToken =  jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
