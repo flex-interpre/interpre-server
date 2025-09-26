@@ -4,7 +4,9 @@ package com.flex.interpre.global.security.jwt;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.flex.interpre.domain.auth.entity.RefreshToken;
 import com.flex.interpre.domain.auth.exception.AuthExceptions;
+import com.flex.interpre.domain.auth.repository.RefreshTokenRespository;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.property.JwtProperty;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +24,7 @@ import java.util.UUID;
 public class JwtUtil {
 
     private final JwtProperty jwtProperty;
+    private final RefreshTokenRespository refreshTokenRespository;
 
     @Bean
     public Algorithm algorithm() {
@@ -82,13 +85,23 @@ public class JwtUtil {
 
     public String generateRefreshToken(User user){
 
-        String refreshToken = JWT.create()
+        String token = JWT.create()
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(jwtProperty.getRefreshExpiration(), ChronoUnit.HOURS))
                 .withClaim("id",user.getId().toString())
                 .withClaim("type","RefreshToken")
                 .sign(algorithm());
 
-        return refreshToken;
+        RefreshToken refreshToken = RefreshToken.builder()
+                .userId(user.getId().toString())
+                .refreshToken(token)
+                .ttl(jwtProperty.getRefreshExpiration())
+                .build();
+
+        refreshTokenRespository.save(refreshToken);
+
+        return token;
     }
+
+
 }
