@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -33,12 +34,16 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         );
 
 
-        User user = userRepository.findByGoogleId((String) oAuth2User.getAttributes().get("sub")).orElseGet(() -> from(oAuth2User.getAttributes(),role));
+        Optional<User> optionalUser = userRepository.findByGoogleId((String) oAuth2User.getAttributes().get("sub"));
+
+        boolean firstLogin = optionalUser.isEmpty();
+        User user = optionalUser.orElseGet(() -> from(oAuth2User.getAttributes(), role));
+
 
         String accessToken =  jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        setCookie(accessToken,refreshToken,response);
+        setCookie(accessToken,refreshToken,firstLogin,response);
 
         response.sendRedirect("http://localhost:3000/callback");
 
@@ -60,10 +65,11 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         );
     }
 
-    private void setCookie(String accessToken, String refreshToken, HttpServletResponse response) {
+    private void setCookie(String accessToken, String refreshToken, boolean firstLogin, HttpServletResponse response) {
 
         addTokenCookie(response, "accessToken", accessToken);
         addTokenCookie(response, "refreshToken", refreshToken);
+        addTokenCookie(response, "firstLogin", String.valueOf(firstLogin));
     }
 
     private void addTokenCookie(HttpServletResponse response, String name, String value) {
