@@ -1,5 +1,7 @@
 package com.flex.interpre.global.config;
 
+import com.flex.interpre.domain.auth.handler.CustomOAuth2SuccessHandler;
+import com.flex.interpre.domain.auth.service.CustomOAuth2UserService;
 import com.flex.interpre.global.security.jwt.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -25,6 +29,9 @@ public class SecurityConfig {
         return http.cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(c->c.userService(customOAuth2UserService))
+                        .successHandler(customOAuth2SuccessHandler))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(request -> request.anyRequest().permitAll())
                 .build();
