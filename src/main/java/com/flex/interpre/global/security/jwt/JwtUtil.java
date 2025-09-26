@@ -5,12 +5,15 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.flex.interpre.domain.auth.exception.AuthExceptions;
+import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.property.JwtProperty;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -66,5 +69,26 @@ public class JwtUtil {
                         .getClaim("id")
                         .asString()
         );
+    }
+
+    public String generateToken(User user){
+        return JWT.create()
+                .withIssuedAt(Instant.now())
+                .withExpiresAt(Instant.now().plus(jwtProperty.getTokenExpiration(), ChronoUnit.HOURS))
+                .withClaim("id",user.getId().toString())
+                .withClaim("type","AccessToken")
+                .sign(algorithm());
+    }
+
+    public String generateRefreshToken(User user){
+
+        String refreshToken = JWT.create()
+                .withIssuedAt(Instant.now())
+                .withExpiresAt(Instant.now().plus(jwtProperty.getRefreshExpiration(), ChronoUnit.HOURS))
+                .withClaim("id",user.getId().toString())
+                .withClaim("type","RefreshToken")
+                .sign(algorithm());
+
+        return refreshToken;
     }
 }

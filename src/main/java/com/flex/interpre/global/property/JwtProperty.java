@@ -15,4 +15,7 @@ public class JwtProperty {
 
     @NotBlank
     Long tokenExpiration;
+
+    @NotBlank
+    Long refreshExpiration;
 }
