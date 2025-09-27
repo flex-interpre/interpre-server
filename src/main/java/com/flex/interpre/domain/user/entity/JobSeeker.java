@@ -3,7 +3,7 @@ package com.flex.interpre.domain.user.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,7 +13,7 @@ import java.util.UUID;
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -32,12 +32,12 @@ public class JobSeeker {
     @CollectionTable(name = "job_seeker_desired_areas",
             joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "desired_area")
-    private List<Area> desiredAreas;
+    @Column(name = "desired_area") @Builder.Default
+    private Set<Area> desiredAreas = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(name = "job_seeker_desired_categories",
             joinColumns = @JoinColumn(name = "job_seeker_id"))
-    @Column(name = "desired_job_category")
-    private List<JobCategoty> desiredJobCategories;
+    @Column(name = "desired_job_category") @Builder.Default
+    private Set<JobCategoty> desiredJobCategories = new HashSet<>();
 }

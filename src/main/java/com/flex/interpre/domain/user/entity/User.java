@@ -21,7 +21,7 @@ import java.util.UUID;
 public class User {
     @Id
     @UuidGenerator
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
     @Column(nullable = false, length = 255, unique = true)

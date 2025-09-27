@@ -2,6 +2,7 @@ package com.flex.interpre.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.UUID;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Table(name = "companies")
 public class Company {
     @Id
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
