@@ -10,7 +10,8 @@ import org.springframework.http.HttpStatus;
 public enum AuthExceptions implements ApiExceptions {
 
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED,"엑세스 토큰이 만료 되었습니다."),
-    AUTHENTICATION_FAILED(HttpStatus.BAD_REQUEST, "인증에 실패 했습니다");
+    AUTHENTICATION_FAILED(HttpStatus.BAD_REQUEST, "인증에 실패 했습니다"),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED,"잘못된 인증 정보 입니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
