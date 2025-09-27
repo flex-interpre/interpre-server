@@ -44,12 +44,6 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public enum Role {
-        JOB_SEEKER,
-        COMPANY,
-        ADMIN
-    }
-
     // 관리자의 기업 계정 승인용 메서드
     public void approve() {
         this.approved = true;
