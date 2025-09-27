@@ -9,12 +9,11 @@ import java.util.Set;
 public record MyJobSeekerInfo(
     String googleId,
     String email,
-//    Role role,
     String name,
     Education education,
     Set<Area> desiredAreas,
     Set<JobCategoty> desiredJobCategories
-) {
+) implements MyUserDetailInfo {
     public static MyJobSeekerInfo from(JobSeeker jobSeeker) {
         if  (jobSeeker == null) {
             return null;
@@ -22,7 +21,6 @@ public record MyJobSeekerInfo(
         return MyJobSeekerInfo.builder()
                 .googleId(jobSeeker.getUser().getGoogleId())
                 .email(jobSeeker.getUser().getEmail())
-//                .role(jobSeeker.getUser().getRole())
                 .name(jobSeeker.getName())
                 .education(jobSeeker.getEducation())
                 .desiredAreas(jobSeeker.getDesiredAreas())

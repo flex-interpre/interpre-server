@@ -7,14 +7,13 @@ import lombok.Builder;
 public record MyCompanyInfo(
         String googleId,
         String email,
-//        Role role,
         String companyName,
         String businessNumber,
         String address,
         String website,
         String description,
         String logoUrl
-) {
+) implements MyUserDetailInfo {
     public static MyCompanyInfo from(Company company) {
         if  (company == null) {
             return null;
@@ -22,7 +21,6 @@ public record MyCompanyInfo(
         return MyCompanyInfo.builder()
                 .googleId(company.getUser().getGoogleId())
                 .email(company.getUser().getEmail())
-//                .role(company.getUser().getRole())
                 .companyName(company.getCompanyName())
                 .businessNumber(company.getBusinessNumber())
                 .address(company.getAddress())
