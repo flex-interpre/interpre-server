@@ -7,7 +7,6 @@ import com.flex.interpre.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -15,9 +14,8 @@ public class AuthService {
 
     private final RefreshTokenRespository refreshTokenRespository;
 
-    @Transactional
     @PreAuthorize("isAuthenticated()")
-    public void logout(User user, String token){
+    public void logout(User user, String token) {
 
         RefreshToken refreshToken = refreshTokenRespository.findByRefreshToken(token)
                 .orElseThrow(AuthExceptions.INVALID_TOKEN::toException);
