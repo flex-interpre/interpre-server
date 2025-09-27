@@ -44,5 +44,8 @@ app:
     key: ${JWT_SECRET_KEY}
     token-expiration: 24
     refresh-expiration: 720
+  oauth2:
+    allowed-urls:
+      http://localhost:3000
 
 
