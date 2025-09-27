@@ -1,7 +1,7 @@
 package com.flex.interpre.domain.user.controller;
 
-import com.flex.interpre.domain.user.dto.response.CompanyInfo;
-import com.flex.interpre.domain.user.dto.response.JobSeekerInfo;
+import com.flex.interpre.domain.user.dto.response.MyCompanyInfo;
+import com.flex.interpre.domain.user.dto.response.MyJobSeekerInfo;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.service.UserService;
 import com.flex.interpre.global.dto.ApiResponse;
@@ -20,13 +20,13 @@ public class UserController {
 
     @GetMapping("/me")
     @Operation(summary = "내 (구직자) 정보 조회")
-    public ApiResponse<JobSeekerInfo> getJobSeekerInfo(@AuthenticationPrincipal User user){
+    public ApiResponse<MyJobSeekerInfo> getJobSeekerInfo(@AuthenticationPrincipal User user){
         return ApiResponse.ok(userService.getJobSeekerInfo(user));
     }
 
     @GetMapping("/company/me")
     @Operation(summary = "내 기업 정보 조회")
-    public ApiResponse<CompanyInfo> getCompanyInfo(@AuthenticationPrincipal User user){
+    public ApiResponse<MyCompanyInfo> getCompanyInfo(@AuthenticationPrincipal User user){
         return ApiResponse.ok(userService.getCompanyInfo(user));
     }
 }

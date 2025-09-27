@@ -1,7 +1,7 @@
 package com.flex.interpre.domain.user.service;
 
-import com.flex.interpre.domain.user.dto.response.CompanyInfo;
-import com.flex.interpre.domain.user.dto.response.JobSeekerInfo;
+import com.flex.interpre.domain.user.dto.response.MyCompanyInfo;
+import com.flex.interpre.domain.user.dto.response.MyJobSeekerInfo;
 import com.flex.interpre.domain.user.entity.Company;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import com.flex.interpre.domain.user.entity.User;
@@ -17,17 +17,17 @@ public class UserService {
     private final JobSeekerRepository jobSeekerRepository;
     private final CompanyRepository companyRepository;
 
-    public JobSeekerInfo getJobSeekerInfo(User user){
+    public MyJobSeekerInfo getJobSeekerInfo(User user){
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-        return JobSeekerInfo.from(jobSeeker);
+        return MyJobSeekerInfo.from(jobSeeker);
     }
 
-    public CompanyInfo getCompanyInfo(User user){
+    public MyCompanyInfo getCompanyInfo(User user){
         Company company = companyRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-        return CompanyInfo.from(company);
+        return MyCompanyInfo.from(company);
     }
 }

@@ -6,7 +6,7 @@ import lombok.Builder;
 import java.util.Set;
 
 @Builder
-public record JobSeekerInfo(
+public record MyJobSeekerInfo(
     String googleId,
     String email,
 //    Role role,
@@ -15,11 +15,11 @@ public record JobSeekerInfo(
     Set<Area> desiredAreas,
     Set<JobCategoty> desiredJobCategories
 ) {
-    public static JobSeekerInfo from(JobSeeker jobSeeker) {
+    public static MyJobSeekerInfo from(JobSeeker jobSeeker) {
         if  (jobSeeker == null) {
             return null;
         }
-        return JobSeekerInfo.builder()
+        return MyJobSeekerInfo.builder()
                 .googleId(jobSeeker.getUser().getGoogleId())
                 .email(jobSeeker.getUser().getEmail())
 //                .role(jobSeeker.getUser().getRole())

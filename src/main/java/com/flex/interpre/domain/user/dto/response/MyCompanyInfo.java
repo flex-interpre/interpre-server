@@ -1,12 +1,10 @@
 package com.flex.interpre.domain.user.dto.response;
 
 import com.flex.interpre.domain.user.entity.Company;
-import com.flex.interpre.domain.user.entity.Role;
-import com.flex.interpre.domain.user.entity.User;
 import lombok.Builder;
 
 @Builder
-public record CompanyInfo(
+public record MyCompanyInfo(
         String googleId,
         String email,
 //        Role role,
@@ -17,11 +15,11 @@ public record CompanyInfo(
         String description,
         String logoUrl
 ) {
-    public static CompanyInfo from(Company company) {
+    public static MyCompanyInfo from(Company company) {
         if  (company == null) {
             return null;
         }
-        return CompanyInfo.builder()
+        return MyCompanyInfo.builder()
                 .googleId(company.getUser().getGoogleId())
                 .email(company.getUser().getEmail())
 //                .role(company.getUser().getRole())
