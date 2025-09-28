@@ -93,7 +93,7 @@ public class JwtUtil {
                 .sign(algorithm());
 
         RefreshToken refreshToken = RefreshToken.builder()
-                .userId(user.getId().toString())
+                .userId(user.getId())
                 .refreshToken(token)
                 .ttl(jwtProperty.getRefreshExpiration())
                 .build();

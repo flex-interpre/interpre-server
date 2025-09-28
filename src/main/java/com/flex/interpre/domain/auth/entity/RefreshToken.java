@@ -1,12 +1,13 @@
 package com.flex.interpre.domain.auth.entity;
 
+import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
-import lombok.Builder;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.index.Indexed;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Builder
@@ -17,7 +18,7 @@ public class RefreshToken {
     @Id
     Long id;
 
-    String userId;
+    UUID userId;
 
     @Indexed
     String refreshToken;
