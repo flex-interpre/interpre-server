@@ -2,12 +2,12 @@ package com.flex.interpre.domain.auth.handler;
 
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.UserRepository;
+import com.flex.interpre.global.property.UrlProperty;
 import com.flex.interpre.global.security.jwt.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,11 +23,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
-    @Value("${app.oauth2.allowed-urls}")
-    private List<String> allowedUrls;
 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final UrlProperty urlProperty;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -140,8 +138,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     }
 
     private boolean isAllowedUrl(String callBackUrl) {
-        if (callBackUrl == null || allowedUrls == null) return false;
-        return allowedUrls.stream()
-                .anyMatch(callBackUrl::equals);
+        if (callBackUrl == null || urlProperty.getUrls() == null) return false;
+        return urlProperty.getUrls().contains(callBackUrl);
     }
 }
