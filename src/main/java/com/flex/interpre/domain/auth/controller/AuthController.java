@@ -5,7 +5,6 @@ import com.flex.interpre.domain.auth.dto.response.TokenResponse;
 import com.flex.interpre.domain.auth.service.AuthService;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,8 +26,9 @@ public class AuthController {
     }
 
     @PatchMapping("/sessions")
-    public ApiResponse<TokenResponse> regenerateToken(HttpServletRequest request, @Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
+    public ApiResponse<TokenResponse> regenerateToken(@RequestHeader("Authorization") String header, @Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
 
-        return ApiResponse.ok(authService.regenerateToken(request, refreshTokenRequest.getRefreshToken()));
+        String accessToken = header.replace("Bearer ", "");
+        return ApiResponse.ok(authService.regenerateToken(accessToken, refreshTokenRequest.getRefreshToken()));
     }
 }

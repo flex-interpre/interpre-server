@@ -7,7 +7,6 @@ import com.flex.interpre.domain.auth.repository.RefreshTokenRespository;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.UserRepository;
 import com.flex.interpre.global.security.jwt.JwtUtil;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -36,9 +35,7 @@ public class AuthService {
         refreshTokenRespository.delete(refreshToken);
     }
 
-    public TokenResponse regenerateToken(HttpServletRequest request, String refreshToken) {
-
-        String accessToken = jwtUtil.extractToken(request);
+    public TokenResponse regenerateToken(String accessToken, String refreshToken) {
 
         if (Objects.isNull(accessToken)) {
             throw AuthExceptions.INVALID_TOKEN.toException();
