@@ -32,38 +32,38 @@ public class JwtUtil {
         return Algorithm.HMAC256(jwtProperty.getKey());
     }
 
-    public String extractToken(HttpServletRequest request){
+    public String extractToken(HttpServletRequest request) {
 
         String authorization = request.getHeader("Authorization");
 
-        if (authorization != null && authorization.startsWith("Bearer ")){
+        if (authorization != null && authorization.startsWith("Bearer ")) {
 
             return authorization.substring(7);
 
-        }else return null;
+        } else return null;
     }
 
-    public boolean validateToken(String token){
+    public boolean validateToken(String token) {
 
-        if (Objects.isNull(token)){
+        if (Objects.isNull(token)) {
             return false;
         }
 
-        try{
+        try {
 
             JWT.require(algorithm()).build().verify(token);
             return true;
-        }catch (TokenExpiredException e){
+        } catch (TokenExpiredException e) {
 
             throw AuthExceptions.ACCESS_TOKEN_EXPIRED.toException();
-        } catch (Exception e){
+        } catch (Exception e) {
 
             return false;
         }
 
     }
 
-    public UUID extractUUID(String token){
+    public UUID extractUUID(String token) {
 
         return UUID.fromString(
                 JWT.require(algorithm())
@@ -74,22 +74,22 @@ public class JwtUtil {
         );
     }
 
-    public String generateToken(User user){
+    public String generateToken(User user) {
         return JWT.create()
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(jwtProperty.getTokenExpiration(), ChronoUnit.HOURS))
-                .withClaim("id",user.getId().toString())
-                .withClaim("type","AccessToken")
+                .withClaim("id", user.getId().toString())
+                .withClaim("type", TokenType.ACCESS.name())
                 .sign(algorithm());
     }
 
-    public String generateRefreshToken(User user){
+    public String generateRefreshToken(User user) {
 
         String token = JWT.create()
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(jwtProperty.getRefreshExpiration(), ChronoUnit.HOURS))
-                .withClaim("id",user.getId().toString())
-                .withClaim("type","RefreshToken")
+                .withClaim("id", user.getId().toString())
+                .withClaim("type", TokenType.REFRESH.name())
                 .sign(algorithm());
 
         RefreshToken refreshToken = RefreshToken.builder()
@@ -103,5 +103,8 @@ public class JwtUtil {
         return token;
     }
 
-
+    public enum TokenType {
+        ACCESS,
+        REFRESH
+    }
 }

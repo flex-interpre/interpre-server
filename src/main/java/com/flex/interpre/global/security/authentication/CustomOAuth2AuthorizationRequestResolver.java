@@ -37,21 +37,23 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
             return null;
         }
 
-        // role 파라미터 가져오기
+        //파라미터 가져오기
         String role = request.getParameter("role");
+        String callback = request.getParameter("callback");
+
+        String customState = authorizationRequest.getState();
+
         if (role != null) {
-            // 기존 state 값 가져오기
-            String originalState = authorizationRequest.getState();
-
-            // role 붙이기
-            String customState = originalState + "|role:" + role;
-
-            // 새로운 요청 생성(OAuth 표준 파라미터만 유지 된다)
-            return OAuth2AuthorizationRequest.from(authorizationRequest)
-                    .state(customState)
-                    .build();
+            customState += "|role:" + role;
         }
 
-        return authorizationRequest;
+        if (callback != null) {
+            customState += "|callback:" + callback;
+        }
+
+        return OAuth2AuthorizationRequest.from(authorizationRequest)
+                .state(customState)
+                .build();
     }
+
 }

@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
 public class GoogleProperty {
 
     @NotBlank
-    private String ClientId;
+    private String clientId;
 
     @NotBlank
-    private String RedirectUrl;
+    private String redirectUrl;
 
     @NotBlank
-    private String ClientSecret;
+    private String clientSecret;
 }
