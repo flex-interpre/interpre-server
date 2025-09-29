@@ -8,7 +8,6 @@ import com.flex.interpre.domain.user.dto.response.MyJobSeekerInfo;
 import com.flex.interpre.domain.user.dto.response.MyUserDetailInfo;
 import com.flex.interpre.domain.user.entity.Company;
 import com.flex.interpre.domain.user.entity.JobSeeker;
-import com.flex.interpre.domain.user.entity.Role;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.exception.UserExceptions;
 import com.flex.interpre.domain.user.repository.CompanyRepository;
@@ -16,6 +15,7 @@ import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import com.flex.interpre.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +25,7 @@ public class UserService {
 
 
     // 유저 정보 조회
+    @Transactional(readOnly = true)
     public MyUserDetailInfo getUserInfo(User user) {
         return switch (user.getRole()) {
             case JOB_SEEKER -> getJobSeekerInfo(user);
@@ -34,12 +35,13 @@ public class UserService {
     }
 
     // 유저 정보 수정
+    @Transactional
     public void updateUserInfo(User user, UserUpdateRequest request){
         switch (request) {
             case UpdateMyJobSeekerInfo jobSeekerInfo -> updateJobSeekerInfo(user, jobSeekerInfo);
             case UpdateMyCompanyInfo companyInfo -> updateCompanyInfo(user, companyInfo);
             default -> throw new ApiException(UserExceptions.INVALID_ROLE);
-        };
+        }
     }
 
 
@@ -63,13 +65,22 @@ public class UserService {
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-        if (request.name() != null && !request.name().isEmpty()) {
-            jobSeeker.setName(request.name());
-        }
+        jobSeeker.setName(request.name());
+        jobSeeker.setEducation(request.education());
+        jobSeeker.setDesiredAreas(request.desiredAreas());
+        jobSeeker.setDesiredJobCategories(request.desiredJobCategories());
     }
 
     private void updateCompanyInfo(User user, UpdateMyCompanyInfo request){
         Company company = companyRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+
+        company.setCompanyName(request.companyName());
+        company.setBusinessNumber(request.businessNumber());
+        company.setAddress(request.address());
+        company.setWebsite(request.website());
+        company.setDescription(request.description());
+        company.setLogoUrl(request.logoUrl());
+
     }
 }

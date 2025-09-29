@@ -7,6 +7,7 @@ import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.service.UserService;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class UserController {
 
     @PutMapping("/me")
     @Operation(summary = "내 정보 수정")
-    public ApiResponse<Void> updateUserInfo(@AuthenticationPrincipal User user, @RequestBody UserUpdateRequest request){
+    public ApiResponse<Void> updateUserInfo(@AuthenticationPrincipal User user, @Valid @RequestBody UserUpdateRequest request){
         userService.updateUserInfo(user, request);
         return ApiResponse.ok();
     }

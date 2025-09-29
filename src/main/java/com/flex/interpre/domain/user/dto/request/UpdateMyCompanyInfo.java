@@ -1,9 +1,8 @@
 package com.flex.interpre.domain.user.dto.request;
 
+import jakarta.validation.Valid;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.flex.interpre.domain.user.entity.Role;
-
+@Valid
 public record UpdateMyCompanyInfo(
         String companyName,
         String businessNumber,
@@ -12,9 +11,4 @@ public record UpdateMyCompanyInfo(
         String description,
         String logoUrl
 ) implements UserUpdateRequest {
-
-    @JsonIgnore
-    public Role getRole() {
-        return Role.COMPANY;
-    }
 }
