@@ -29,7 +29,7 @@ public class UserService {
             throw new ApiException(UserExceptions.INVALID_ROLE);
         }
     }
-g
+
     public MyJobSeekerInfo getJobSeekerInfo(User user){
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
