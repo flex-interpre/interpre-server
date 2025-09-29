@@ -1,6 +1,7 @@
 package com.flex.interpre.domain.user.dto.response;
 
 import com.flex.interpre.domain.user.entity.Company;
+import jakarta.annotation.Nonnull;
 import lombok.Builder;
 
 @Builder
@@ -14,10 +15,7 @@ public record MyCompanyInfo(
         String description,
         String logoUrl
 ) implements MyUserDetailInfo {
-    public static MyCompanyInfo from(Company company) {
-        if  (company == null) {
-            return null;
-        }
+    public static MyCompanyInfo from(@Nonnull Company company) {
         return MyCompanyInfo.builder()
                 .googleId(company.getUser().getGoogleId())
                 .email(company.getUser().getEmail())

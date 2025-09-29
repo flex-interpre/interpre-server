@@ -1,6 +1,7 @@
 package com.flex.interpre.domain.user.dto.response;
 
 import com.flex.interpre.domain.user.entity.*;
+import jakarta.annotation.Nonnull;
 import lombok.Builder;
 
 import java.util.Set;
@@ -14,10 +15,7 @@ public record MyJobSeekerInfo(
     Set<Area> desiredAreas,
     Set<JobCategoty> desiredJobCategories
 ) implements MyUserDetailInfo {
-    public static MyJobSeekerInfo from(JobSeeker jobSeeker) {
-        if  (jobSeeker == null) {
-            return null;
-        }
+    public static MyJobSeekerInfo from(@Nonnull JobSeeker jobSeeker) {
         return MyJobSeekerInfo.builder()
                 .googleId(jobSeeker.getUser().getGoogleId())
                 .email(jobSeeker.getUser().getEmail())
