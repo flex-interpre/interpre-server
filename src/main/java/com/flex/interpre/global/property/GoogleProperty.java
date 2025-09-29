@@ -5,17 +5,17 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Component
 @Data
-@ConfigurationProperties(prefix = "app.jwt")
-public class JwtProperty {
+@Component
+@ConfigurationProperties(prefix = "app.google")
+public class GoogleProperty {
 
     @NotBlank
-    String key;
+    private String clientId;
 
     @NotBlank
-    Long tokenExpiration;
+    private String redirectUrl;
 
     @NotBlank
-    Long refreshExpiration;
+    private String clientSecret;
 }

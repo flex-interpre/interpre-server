@@ -42,6 +42,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 User user = userRepository.findById(id).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
+                if(!user.isApproved()){
+                    throw UserExceptions.NOT_APPROVED.toException();
+                }
+
                 UserAuthentication authentication = new UserAuthentication(user);
                 authentication.setAuthenticated(true);
                 SecurityContextHolder.getContext().setAuthentication(authentication);

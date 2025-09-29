@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum UserExceptions implements ApiExceptions {
 
     USER_NOT_FOUND(HttpStatus.NOT_FOUND,"해당 유저를 찾을 수 없습니다"),
+    NOT_APPROVED(HttpStatus.UNAUTHORIZED,"승인되지 않은 계정입니다."),
     INVALID_ROLE(HttpStatus.BAD_REQUEST, "잘못된 사용자 역할입니다");
 
     private final HttpStatus httpStatus;
