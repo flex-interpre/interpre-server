@@ -8,6 +8,7 @@ import com.flex.interpre.domain.user.dto.response.MyJobSeekerInfo;
 import com.flex.interpre.domain.user.dto.response.MyUserDetailInfo;
 import com.flex.interpre.domain.user.entity.Company;
 import com.flex.interpre.domain.user.entity.JobSeeker;
+import com.flex.interpre.domain.user.entity.Role;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.exception.UserExceptions;
 import com.flex.interpre.domain.user.repository.CompanyRepository;
