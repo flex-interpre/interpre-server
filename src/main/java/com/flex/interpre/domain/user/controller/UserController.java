@@ -26,8 +26,7 @@ public class UserController {
 
     @PutMapping("/me")
     @Operation(summary = "내 정보 수정")
-    public ApiResponse<Void> updateUserInfo(@AuthenticationPrincipal User user, @Valid @RequestBody UserUpdateRequest request){
-        userService.updateUserInfo(user, request);
-        return ApiResponse.ok();
+    public ApiResponse<MyUserDetailInfo> updateUserInfo(@AuthenticationPrincipal User user, @Valid @RequestBody UserUpdateRequest request){
+        return ApiResponse.ok(userService.updateUserInfo(user, request));
     }
 }

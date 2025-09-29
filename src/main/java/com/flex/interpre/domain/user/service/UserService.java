@@ -36,12 +36,12 @@ public class UserService {
 
     // 유저 정보 수정
     @Transactional
-    public void updateUserInfo(User user, UserUpdateRequest request){
-        switch (request) {
+    public MyUserDetailInfo updateUserInfo(User user, UserUpdateRequest request){
+        return switch (request) {
             case UpdateMyJobSeekerInfo jobSeekerInfo -> updateJobSeekerInfo(user, jobSeekerInfo);
             case UpdateMyCompanyInfo companyInfo -> updateCompanyInfo(user, companyInfo);
             default -> throw new ApiException(UserExceptions.INVALID_ROLE);
-        }
+        };
     }
 
 
@@ -61,7 +61,7 @@ public class UserService {
         return MyCompanyInfo.from(company);
     }
 
-    private void updateJobSeekerInfo(User user, UpdateMyJobSeekerInfo request){
+    private MyJobSeekerInfo updateJobSeekerInfo(User user, UpdateMyJobSeekerInfo request){
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
@@ -69,9 +69,11 @@ public class UserService {
         jobSeeker.setEducation(request.education());
         jobSeeker.setDesiredAreas(request.desiredAreas());
         jobSeeker.setDesiredJobCategories(request.desiredJobCategories());
+
+        return MyJobSeekerInfo.from(jobSeeker);
     }
 
-    private void updateCompanyInfo(User user, UpdateMyCompanyInfo request){
+    private MyCompanyInfo updateCompanyInfo(User user, UpdateMyCompanyInfo request){
         Company company = companyRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
@@ -82,5 +84,6 @@ public class UserService {
         company.setDescription(request.description());
         company.setLogoUrl(request.logoUrl());
 
+        return MyCompanyInfo.from(company);
     }
 }
