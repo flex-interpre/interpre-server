@@ -2,7 +2,6 @@ package com.flex.interpre.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -20,8 +19,8 @@ import java.util.UUID;
 })
 public class User {
     @Id
-    @UuidGenerator
-    @Column(nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
     @Column(nullable = false, length = 255, unique = true)
@@ -44,12 +43,6 @@ public class User {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    public enum Role {
-        JOB_SEEKER,
-        COMPANY,
-        ADMIN
-    }
 
     // 관리자의 기업 계정 승인용 메서드
     public void approve() {
