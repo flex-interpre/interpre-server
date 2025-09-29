@@ -63,7 +63,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         setCookie(accessToken, refreshToken, firstLogin, response);
 
-        response.sendRedirect("http://localhost:3000/callback");
+        response.sendRedirect(callBackUrl);
 
 
     }
