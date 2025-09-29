@@ -1,16 +1,14 @@
 package com.flex.interpre.domain.auth.controller;
 
 import com.flex.interpre.domain.auth.dto.request.RefreshTokenRequest;
+import com.flex.interpre.domain.auth.dto.response.TokenResponse;
 import com.flex.interpre.domain.auth.service.AuthService;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,5 +23,12 @@ public class AuthController {
         authService.logout(user, request.getRefreshToken());
 
         return ApiResponse.ok();
+    }
+
+    @PatchMapping("/sessions")
+    public ApiResponse<TokenResponse> regenerateToken(@RequestHeader("Authorization") String header, @Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
+
+        String accessToken = header.replace("Bearer ", "");
+        return ApiResponse.ok(authService.regenerateToken(accessToken, refreshTokenRequest.getRefreshToken()));
     }
 }
