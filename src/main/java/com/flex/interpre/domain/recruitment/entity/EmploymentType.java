@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.recruitment.entity;
 
-public enum EmploymentTyoe {
+public enum EmploymentType {
     FULL_TIME,
     PART_TIME,
     INTERN,
