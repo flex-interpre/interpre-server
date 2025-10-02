@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.auth.handler;
 
+import com.flex.interpre.domain.user.entity.Role;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.UserRepository;
 import com.flex.interpre.global.property.UrlProperty;
@@ -38,7 +39,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String roleParam = extractRoleFromState(state);
         String callBackUrl = extractCallBackFromState(state);
 
-        User.Role role = User.Role.valueOf(
+        Role role = Role.valueOf(
                 roleParam != null ? roleParam.toUpperCase() : "JOB_SEEKER"
         );
 
@@ -68,10 +69,10 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
     }
 
-    private User from(Map<String, Object> attributes, User.Role role) {
+    private User from(Map<String, Object> attributes, Role role) {
 
         boolean approved = true;
-        if (role == User.Role.COMPANY) approved = false;
+        if (role == Role.COMPANY) approved = false;
 
         return userRepository.save(
                 User.builder()
