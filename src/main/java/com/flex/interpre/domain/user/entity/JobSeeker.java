@@ -39,5 +39,5 @@ public class JobSeeker {
     @CollectionTable(name = "job_seeker_desired_categories",
             joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Column(name = "desired_job_category") @Builder.Default
-    private Set<JobCategoty> desiredJobCategories = new HashSet<>();
+    private Set<JobCategory> desiredJobCategories = new HashSet<>();
 }
