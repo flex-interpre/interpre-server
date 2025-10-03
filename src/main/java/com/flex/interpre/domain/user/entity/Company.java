@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.util.UUID;
 
 @Entity
-@Getter @Builder
+@Getter @Setter @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "companies")
 public class Company {
