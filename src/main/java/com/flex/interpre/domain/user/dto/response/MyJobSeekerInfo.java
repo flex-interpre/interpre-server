@@ -13,7 +13,7 @@ public record MyJobSeekerInfo(
     String name,
     Education education,
     Set<Area> desiredAreas,
-    Set<JobCategoty> desiredJobCategories
+    Set<JobCategory> desiredJobCategories
 ) implements MyUserDetailInfo {
     public static MyJobSeekerInfo from(@Nonnull JobSeeker jobSeeker) {
         return MyJobSeekerInfo.builder()
