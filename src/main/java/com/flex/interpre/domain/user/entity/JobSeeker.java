@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.user.entity;
 
-import com.flex.interpre.domain.bookmark.entity.BookMark;
+import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -46,8 +46,12 @@ public class JobSeeker {
     @Builder.Default
     private Set<JobCategory> desiredJobCategories = new HashSet<>();
 
-    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
+    @ManyToMany
+    @JoinTable(
+            name = "job_seeker_bookmarks",
+            joinColumns = @JoinColumn(name = "job_seeker_id"),
+            inverseJoinColumns = @JoinColumn(name = "recruitment_id")
+    )
     @Builder.Default
-    @Column(name = "bookmarks")
-    private Set<BookMark> bookMarks = new HashSet<>();
+    private Set<Recruitment> bookmarkedRecruitments = new HashSet<>();
 }
