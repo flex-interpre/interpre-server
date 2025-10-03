@@ -33,4 +33,12 @@ public class JobSeekerController {
         jobSeekerService.addBookmark(recruitment, user);
         return ApiResponse.ok();
     }
+
+    @DeleteMapping("/{recruitment}")
+    @Operation(summary = "북마크 제거 api")
+    public ApiResponse<Void> deleteBookmark(@PathVariable Recruitment recruitment, @AuthenticationPrincipal User user) {
+
+        jobSeekerService.deleteBookmark(recruitment, user);
+        return ApiResponse.ok();
+    }
 }

@@ -33,4 +33,12 @@ public class JobSeekerService {
         jobSeekerRepository.save(jobSeeker);
     }
 
+    public void deleteBookmark(Recruitment recruitment, @AuthenticationPrincipal User user) {
+
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+
+        jobSeeker.getBookmarkedRecruitments().remove(recruitment);
+        jobSeekerRepository.save(jobSeeker);
+    }
+
 }
