@@ -25,7 +25,7 @@ public class JobSeeker {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private Education education;
 
     @ElementCollection(fetch = FetchType.LAZY)
