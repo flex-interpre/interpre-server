@@ -1,0 +1,27 @@
+package com.flex.interpre.domain.user.jobSeeker.service;
+
+import com.flex.interpre.domain.user.entity.JobSeeker;
+import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.user.exception.UserExceptions;
+import com.flex.interpre.domain.user.jobSeeker.dto.resposne.BookMarkListResponse;
+import com.flex.interpre.domain.user.repository.JobSeekerRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Service
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('JOB_SEEKER')")
+public class JobSeekerService {
+
+    private final JobSeekerRepository jobSeekerRepository;
+
+    @GetMapping
+    public BookMarkListResponse getBookmarks(User user) {
+
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+        return BookMarkListResponse.from(jobSeeker.getBookmarkedRecruitments());
+
+    }
+}
