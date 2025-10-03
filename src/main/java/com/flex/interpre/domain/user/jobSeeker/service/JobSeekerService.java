@@ -8,7 +8,6 @@ import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +16,6 @@ public class JobSeekerService {
 
     private final JobSeekerRepository jobSeekerRepository;
 
-    @GetMapping
     public BookMarkListResponse getBookmarks(User user) {
 
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
