@@ -78,7 +78,6 @@ public class UserService {
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
         company.setCompanyName(request.companyName());
-        company.setBusinessNumber(request.businessNumber());
         company.setAddress(request.address());
         company.setWebsite(request.website());
         company.setDescription(request.description());
