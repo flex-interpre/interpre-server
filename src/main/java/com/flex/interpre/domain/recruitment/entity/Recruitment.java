@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.recruitment.entity;
 
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.user.entity.Company;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -8,9 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -25,7 +23,7 @@ public class Recruitment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
-    private User company;
+    private Company company;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -53,15 +51,15 @@ public class Recruitment {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "employment_types", joinColumns = @JoinColumn(name = "recruitment_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "employment_type", nullable = false, length = 20)
+    @Column(name = "employment_type", nullable = false, length = 20) @Builder.Default
     private Set<EmploymentType> employmentTypes = new HashSet<>();
 
 
     @Column(name ="min_experience")
-    int minExperience;
+    Integer minExperience;
 
     @Column(name ="max_experience")
-    int maxExperience;
+    Integer maxExperience;
 
     @Column(nullable = false, length = 200)
     String location;
@@ -73,23 +71,24 @@ public class Recruitment {
     @ElementCollection
     @CollectionTable(name = "recruitment_requirements", joinColumns = @JoinColumn(name = "recruitment_id"))
     @Column(name = "requirement") @Builder.Default
-    private List<String> requirements = new ArrayList<>();
+    private Set<String> requirements = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(name = "recruitment_benefits", joinColumns = @JoinColumn(name = "recruitment_id"))
     @Column(name = "benefit") @Builder.Default
-    private List<String> benefits = new ArrayList<>();
+    private Set<String> benefits = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(name = "recruitment_skills", joinColumns = @JoinColumn(name = "recruitment_id"))
     @Column(name = "skill") @Builder.Default
-    private List<String> skills = new ArrayList<>();
+    private Set<String> skills = new HashSet<>();
 
+    @Column(name ="deadline")
     LocalDateTime deadline;
 
-    @Builder.Default
+    @Column(name ="is_active") @Builder.Default
     boolean active = true;
 
-    @Builder.Default
+    @Column(name ="view_count") @Builder.Default
     int viewCount = 0;
 }
