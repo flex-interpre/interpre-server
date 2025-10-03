@@ -9,10 +9,8 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter @Setter @Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
