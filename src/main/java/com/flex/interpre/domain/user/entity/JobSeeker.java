@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.user.entity;
 
+import com.flex.interpre.domain.bookmark.entity.BookMark;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,8 +9,10 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter @Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
@@ -32,12 +35,19 @@ public class JobSeeker {
     @CollectionTable(name = "job_seeker_desired_areas",
             joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "desired_area") @Builder.Default
+    @Column(name = "desired_area")
+    @Builder.Default
     private Set<Area> desiredAreas = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_desired_categories",
             joinColumns = @JoinColumn(name = "job_seeker_id"))
-    @Column(name = "desired_job_category") @Builder.Default
+    @Column(name = "desired_job_category")
+    @Builder.Default
     private Set<JobCategory> desiredJobCategories = new HashSet<>();
+
+    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
+    @Builder.Default
+    @Column(name = "bookmarks")
+    private Set<BookMark> bookmarks = new HashSet<>();
 }
