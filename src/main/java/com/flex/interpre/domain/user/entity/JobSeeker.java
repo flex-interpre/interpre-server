@@ -49,5 +49,5 @@ public class JobSeeker {
     @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
     @Builder.Default
     @Column(name = "bookmarks")
-    private Set<BookMark> bookmarks = new HashSet<>();
+    private Set<BookMark> bookMarks = new HashSet<>();
 }
