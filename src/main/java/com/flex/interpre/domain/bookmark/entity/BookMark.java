@@ -4,9 +4,11 @@ import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 public class BookMark {
