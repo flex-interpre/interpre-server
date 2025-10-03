@@ -12,7 +12,6 @@ import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.exception.UserExceptions;
 import com.flex.interpre.domain.user.repository.CompanyRepository;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
-import com.flex.interpre.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +29,7 @@ public class UserService {
         return switch (user.getRole()) {
             case JOB_SEEKER -> getJobSeekerInfo(user);
             case COMPANY -> getCompanyInfo(user);
-            default -> throw new ApiException(UserExceptions.INVALID_ROLE);
+            default -> throw UserExceptions.INVALID_ROLE.toException();
         };
     }
 
@@ -40,7 +39,7 @@ public class UserService {
         return switch (request) {
             case UpdateMyJobSeekerInfo jobSeekerInfo -> updateJobSeekerInfo(user, jobSeekerInfo);
             case UpdateMyCompanyInfo companyInfo -> updateCompanyInfo(user, companyInfo);
-            default -> throw new ApiException(UserExceptions.INVALID_ROLE);
+            default ->throw UserExceptions.INVALID_ROLE.toException();
         };
     }
 
