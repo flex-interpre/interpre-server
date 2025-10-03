@@ -28,16 +28,16 @@ public class JobSeeker {
     @Column(nullable = false, length = 50)
     private Education education;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_desired_areas",
             joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "desired_area") @Builder.Default
     private Set<Area> desiredAreas = new HashSet<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_desired_categories",
             joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Column(name = "desired_job_category") @Builder.Default
-    private Set<JobCategoty> desiredJobCategories = new HashSet<>();
+    private Set<JobCategory> desiredJobCategories = new HashSet<>();
 }
