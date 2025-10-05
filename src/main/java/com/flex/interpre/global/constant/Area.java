@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.entity;
+package com.flex.interpre.global.constant;
 
 public enum Area {
     서울, 경기, 인천, 부산, 대구, 광주, 대전, 울산,
