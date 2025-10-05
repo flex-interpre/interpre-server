@@ -38,19 +38,19 @@ public class RecruitmentController {
     }
 
     @Operation(summary = "공고문 상세 조회")
-    @GetMapping("/{recruitmentId}")
+    @GetMapping("/{recruitment}")
     public ApiResponse<RecruitmentResponse> getRecruitment(@PathVariable Recruitment recruitment) {
         return ApiResponse.ok(recruitmentService.getRecruitment(recruitment));
     }
 
     @Operation(summary = "공고문 수정")
-    @PutMapping("/{recruitmentId}")
+    @PutMapping("/{recruitment}")
     public ApiResponse<RecruitmentResponse> updateRecruitment(@PathVariable Recruitment recruitment, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
         return ApiResponse.ok(recruitmentService.updateRecruitment(recruitment, request));
     }
 
     @Operation(summary = "공고문 삭제")
-    @DeleteMapping("/{recruitmentId}")
+    @DeleteMapping("/{recruitment}")
     public ApiResponse<Void> deleteRecruitment(@PathVariable Recruitment recruitment) {
         recruitmentService.deleteRecruitment(recruitment);
         return ApiResponse.ok();
