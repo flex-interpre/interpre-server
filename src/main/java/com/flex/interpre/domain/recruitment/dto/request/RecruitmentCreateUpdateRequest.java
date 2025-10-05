@@ -1,6 +1,10 @@
 package com.flex.interpre.domain.recruitment.dto.request;
 
 import com.flex.interpre.domain.recruitment.entity.*;
+import com.flex.interpre.global.constant.Area;
+import com.flex.interpre.global.constant.JobSecond;
+import com.flex.interpre.global.constant.JobFirst;
+import com.flex.interpre.global.constant.JobThird;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
@@ -9,17 +13,24 @@ import java.util.Set;
 
 public record RecruitmentCreateUpdateRequest(
         @NotBlank String title,
-        @NotEmpty Set<JobGroup> jobGroups,
-        @NotEmpty Set<Job> jobs,
+        @NotBlank String description,
+        @Future LocalDateTime deadline,
+
+        @NotEmpty Set<Area> jobAreas,
+        @NotBlank String location,
+
+        @NotEmpty Set<JobFirst> jobFirsts,
+        @NotEmpty Set<JobSecond> jobSeconds,
+        @NotEmpty Set<JobThird> jobThirds,
         @NotEmpty Set<EmploymentType> employmentTypes,
+
         Integer minExperience,
         Integer maxExperience,
-        @NotBlank String location,
-        @NotBlank String description,
+
         @NotEmpty Set<String> requirements,
         @NotEmpty Set<String> benefits,
-        @NotEmpty Set<String> skills,
-        @Future LocalDateTime deadline
+        @NotEmpty Set<String> skills
+
 ){
     @AssertTrue(message = "최대 경력은 최소 경력보다 크거나 같아야 합니다.")
     public boolean isMinExperienceValid() {
