@@ -45,14 +45,14 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 수정")
     @PutMapping("/{recruitmentId}")
-    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal User user, @PathVariable Recruitment recruitment, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
-        return ApiResponse.ok(recruitmentService.updateRecruitment(user, recruitment, request));
+    public ApiResponse<RecruitmentResponse> updateRecruitment(@PathVariable Recruitment recruitment, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
+        return ApiResponse.ok(recruitmentService.updateRecruitment(recruitment, request));
     }
 
     @Operation(summary = "공고문 삭제")
     @DeleteMapping("/{recruitmentId}")
-    public ApiResponse<Void> deleteRecruitment(@AuthenticationPrincipal User user, @PathVariable Recruitment recruitment) {
-        recruitmentService.deleteRecruitment(user, recruitment);
+    public ApiResponse<Void> deleteRecruitment(@PathVariable Recruitment recruitment) {
+        recruitmentService.deleteRecruitment(recruitment);
         return ApiResponse.ok();
     }
 }

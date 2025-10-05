@@ -31,9 +31,6 @@ public class RecruitmentService {
     @PreAuthorize("hasRole('COMPANY')")
     public RecruitmentResponse createRecruitment(User user, RecruitmentCreateUpdateRequest request) {
         Company company = user.getCompany(); // 유저로부터 해당 기업 조회
-        if (company == null) {
-            throw RecruitmentExceptions.COMPANY_NOT_FOUND.toException();
-        }
 
         Recruitment recruitment = Recruitment.create(request, company); // 공고문 생성
         recruitmentRepository.save(recruitment);
@@ -42,7 +39,6 @@ public class RecruitmentService {
     }
 
     // 공고문 전체 조회
-    @Transactional(readOnly = true)
     public Page<RecruitmentSummaryResponse> getAllRecruitments(Pageable pageable) {
         Page<Recruitment> recruitmentPage = recruitmentRepository.findAllActive(pageable);
 
@@ -60,7 +56,7 @@ public class RecruitmentService {
     // 공고문 업데이트
     @Transactional
     @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
-    public RecruitmentResponse updateRecruitment(User user, Recruitment recruitment, RecruitmentCreateUpdateRequest request) {
+    public RecruitmentResponse updateRecruitment(Recruitment recruitment, RecruitmentCreateUpdateRequest request) {
         recruitment.update(request); // 공고문 업데이트
 
         return RecruitmentResponse.from(recruitment);
@@ -69,7 +65,7 @@ public class RecruitmentService {
     // 공고문 삭제
     @Transactional
     @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
-    public void deleteRecruitment(User user, Recruitment recruitment) {
+    public void deleteRecruitment(Recruitment recruitment) {
 
         recruitmentRepository.delete(recruitment);
     }
