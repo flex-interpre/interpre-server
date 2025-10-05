@@ -10,6 +10,8 @@ import com.flex.interpre.domain.user.entity.Role;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,13 +40,15 @@ public class RecruitmentService {
     }
 
     // 공고문 전체 조회
-    public List<RecruitmentResponse> getAllRecruitments() {
-        return recruitmentRepository.findAll().stream()
-                .map(RecruitmentResponse::from)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<RecruitmentResponse> getAllRecruitments(Pageable pageable) {
+        Page<Recruitment> recruitmentPage = recruitmentRepository.findAllWithCompany(pageable);
+
+        return recruitmentPage.map(RecruitmentResponse::from);
     }
 
     // 공고문 상세 조회
+    @Transactional
     public RecruitmentResponse getRecruitment(UUID recruitmentId) {
         Recruitment recruitment = getRecruitmentById(recruitmentId);
         recruitment.increaseViewCount(); // 조회 시 조회수 증가
@@ -93,7 +97,7 @@ public class RecruitmentService {
     }
 
     private Recruitment getRecruitmentById(UUID recruitmentId) {
-        return recruitmentRepository.findById(recruitmentId)
+        return recruitmentRepository.findByIdWithCompany(recruitmentId)
                 .orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
     }
 }

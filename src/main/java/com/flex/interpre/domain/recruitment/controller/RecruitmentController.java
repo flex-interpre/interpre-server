@@ -9,6 +9,10 @@ import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,8 +33,8 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 전체 조회")
     @GetMapping
-    public ApiResponse<List<RecruitmentResponse>> getAllRecruitments() {
-        return ApiResponse.ok(recruitmentService.getAllRecruitments());
+    public ApiResponse<Page<RecruitmentResponse>> getAllRecruitments(@PageableDefault(size = 30, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ApiResponse.ok(recruitmentService.getAllRecruitments(pageable));
     }
 
     @Operation(summary = "공고문 상세 조회")
