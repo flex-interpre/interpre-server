@@ -3,6 +3,7 @@ package com.flex.interpre.domain.recruitment.controller;
 
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
+import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.service.RecruitmentService;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
@@ -33,7 +34,7 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 전체 조회")
     @GetMapping
-    public ApiResponse<Page<RecruitmentResponse>> getAllRecruitments(@PageableDefault(size = 30, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ApiResponse<Page<RecruitmentSummaryResponse>> getAllRecruitments(@PageableDefault(size = 30, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponse.ok(recruitmentService.getAllRecruitments(pageable));
     }
 

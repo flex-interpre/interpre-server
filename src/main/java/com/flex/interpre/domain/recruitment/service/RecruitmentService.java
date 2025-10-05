@@ -2,6 +2,7 @@ package com.flex.interpre.domain.recruitment.service;
 
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
+import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.exception.RecruitmentExceptions;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
@@ -41,10 +42,10 @@ public class RecruitmentService {
 
     // 공고문 전체 조회
     @Transactional(readOnly = true)
-    public Page<RecruitmentResponse> getAllRecruitments(Pageable pageable) {
+    public Page<RecruitmentSummaryResponse> getAllRecruitments(Pageable pageable) {
         Page<Recruitment> recruitmentPage = recruitmentRepository.findAllWithCompany(pageable);
 
-        return recruitmentPage.map(RecruitmentResponse::from);
+        return recruitmentPage.map(RecruitmentSummaryResponse::from);
     }
 
     // 공고문 상세 조회
