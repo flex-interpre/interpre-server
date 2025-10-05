@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.recruitment.entity;
 
-import com.flex.interpre.domain.recruitment.dto.request.RecruitmentRequest;
+import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.user.entity.Company;
 import jakarta.persistence.*;
 import lombok.*;
@@ -106,7 +106,7 @@ public class Recruitment {
     }
 
     // 공고문 생성
-    public static Recruitment create(RecruitmentRequest request, Company company) {
+    public static Recruitment create(RecruitmentCreateUpdateRequest request, Company company) {
         return Recruitment.builder()
                 .company(company)
                 .title(request.title())
@@ -125,7 +125,7 @@ public class Recruitment {
     }
 
     // 공고문 수정
-    public void update(RecruitmentRequest request) {
+    public void update(RecruitmentCreateUpdateRequest request) {
         this.title = request.title();
         this.jobGroups = request.jobGroups();
         this.jobs = request.jobs();

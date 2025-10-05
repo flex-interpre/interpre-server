@@ -11,11 +11,7 @@ import java.util.UUID;
 @Builder
 public record RecruitmentResponse(
         UUID id,
-
-        UUID companyId,
-        String companyName,
-        String logoUrl,
-
+        CompanySummaryResponse company,
         String title,
         Set<JobGroup> jobGroups,
         Set<Job> jobs,
@@ -36,9 +32,7 @@ public record RecruitmentResponse(
     public static RecruitmentResponse from(Recruitment recruitment) {
         return RecruitmentResponse.builder()
                 .id(recruitment.getId())
-                .companyId(recruitment.getCompany().getId())
-                .companyName(recruitment.getCompany().getCompanyName())
-                .logoUrl(recruitment.getCompany().getLogoUrl())
+                .company(CompanySummaryResponse.from(recruitment.getCompany()))
                 .title(recruitment.getTitle())
                 .jobGroups(recruitment.getJobGroups())
                 .jobs(recruitment.getJobs())

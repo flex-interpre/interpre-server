@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.recruitment.service;
 
-import com.flex.interpre.domain.recruitment.dto.request.RecruitmentRequest;
+import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
@@ -16,9 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +27,7 @@ public class RecruitmentService {
 
     // 공고문 생성
     @Transactional
-    public RecruitmentResponse createRecruitment(User user, RecruitmentRequest request) {
+    public RecruitmentResponse createRecruitment(User user, RecruitmentCreateUpdateRequest request) {
         validateCompanyRole(user); // 기업인지 확인
         Company company = companyRepository.findById(user.getId()) // 기업 조회
                 .orElseThrow(RecruitmentExceptions.COMPANY_NOT_FOUND::toException);
@@ -59,7 +57,7 @@ public class RecruitmentService {
 
     // 공고문 업데이트
     @Transactional
-    public RecruitmentResponse updateRecruitment(User user, UUID recruitmentId, RecruitmentRequest request) {
+    public RecruitmentResponse updateRecruitment(User user, UUID recruitmentId, RecruitmentCreateUpdateRequest request) {
         validateCompanyRole(user);
 
         Recruitment recruitment = getRecruitmentById(recruitmentId);

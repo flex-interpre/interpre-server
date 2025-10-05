@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Set;
 
-public record RecruitmentRequest(
+public record RecruitmentCreateUpdateRequest(
         @NotBlank String title,
         @NotNull Set<JobGroup> jobGroups,
         @NotNull Set<Job> jobs,

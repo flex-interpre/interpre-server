@@ -1,7 +1,7 @@
 package com.flex.interpre.domain.recruitment.controller;
 
 
-import com.flex.interpre.domain.recruitment.dto.request.RecruitmentRequest;
+import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.service.RecruitmentService;
@@ -17,7 +17,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -28,7 +27,7 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 생성")
     @PostMapping
-    public ApiResponse<RecruitmentResponse> create(@AuthenticationPrincipal User user, @Valid @RequestBody RecruitmentRequest request) {
+    public ApiResponse<RecruitmentResponse> create(@AuthenticationPrincipal User user, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
         return ApiResponse.ok(recruitmentService.createRecruitment(user, request));
     }
 
@@ -46,7 +45,7 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 수정")
     @PutMapping("/{recruitmentId}")
-    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal User user, @PathVariable UUID recruitmentId, @Valid @RequestBody RecruitmentRequest request) {
+    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal User user, @PathVariable UUID recruitmentId, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
         return ApiResponse.ok(recruitmentService.updateRecruitment(user, recruitmentId, request));
     }
 

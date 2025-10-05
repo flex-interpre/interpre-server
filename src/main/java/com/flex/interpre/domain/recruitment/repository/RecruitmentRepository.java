@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface RecruitmentRepository extends JpaRepository<Recruitment, UUID> {
 
     // 공고 목록 조회 시 활성화된 공고만 조회, 연관 테이블 페치 조인
-    @Query(value = "SELECT DISTINCT r FROM Recruitment r JOIN FETCH r.company LEFT JOIN FETCH r.jobGroups WHERE r.active = true", countQuery = "SELECT COUNT(r) FROM Recruitment r WHERE r.active = true")
+    @Query(value = "SELECT r FROM Recruitment r JOIN FETCH r.company LEFT JOIN FETCH r.jobGroups WHERE r.active = true", countQuery = "SELECT COUNT(r) FROM Recruitment r WHERE r.active = true")
     Page<Recruitment> findAllActive(Pageable pageable);
 
     // 공고 상세 조회 시 연관 테이블 모두 페치 조인
