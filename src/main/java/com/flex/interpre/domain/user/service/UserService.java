@@ -73,11 +73,7 @@ public class UserService {
         Company company = companyRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-        company.setCompanyName(request.companyName());
-        company.setAddress(request.address());
-        company.setWebsite(request.website());
-        company.setDescription(request.description());
-        company.setLogoUrl(request.logoUrl());
+        company.update(request);
 
         return MyCompanyInfo.from(company);
     }
