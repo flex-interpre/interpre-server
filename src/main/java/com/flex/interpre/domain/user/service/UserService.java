@@ -64,10 +64,7 @@ public class UserService {
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-        jobSeeker.setName(request.name());
-        jobSeeker.setEducation(request.education());
-        jobSeeker.setDesiredAreas(request.desiredAreas());
-        jobSeeker.setDesiredJobCategories(request.desiredJobCategories());
+        jobSeeker.update(request);
 
         return MyJobSeekerInfo.from(jobSeeker);
     }
