@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.recruitment.entity;
 
+import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.user.entity.Company;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,16 +11,18 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
-@Getter @Setter @Builder
+@Getter @Builder
 @EntityListeners(AuditingEntityListener.class)
 @AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name= "recruitments")
 public class Recruitment {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(nullable = false, updatable = false, columnDefinition = "uuid")
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
@@ -91,4 +94,49 @@ public class Recruitment {
 
     @Column(name ="view_count") @Builder.Default
     int viewCount = 0;
+
+    // 조회수 증가 메서드
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
+
+    // 공고문 비활성화 메서드
+    public void deactivate() {
+        this.active = false;
+    }
+
+    // 공고문 생성
+    public static Recruitment create(RecruitmentCreateUpdateRequest request, Company company) {
+        return Recruitment.builder()
+                .company(company)
+                .title(request.title())
+                .jobGroups(request.jobGroups())
+                .jobs(request.jobs())
+                .employmentTypes(request.employmentTypes())
+                .minExperience(request.minExperience())
+                .maxExperience(request.maxExperience())
+                .location(request.location())
+                .description(request.description())
+                .requirements(request.requirements())
+                .benefits(request.benefits())
+                .skills(request.skills())
+                .deadline(request.deadline())
+                .build();
+    }
+
+    // 공고문 수정
+    public void update(RecruitmentCreateUpdateRequest request) {
+        this.title = request.title();
+        this.jobGroups = request.jobGroups();
+        this.jobs = request.jobs();
+        this.employmentTypes = request.employmentTypes();
+        this.minExperience = request.minExperience();
+        this.maxExperience = request.maxExperience();
+        this.location = request.location();
+        this.description = request.description();
+        this.requirements = request.requirements();
+        this.benefits = request.benefits();
+        this.skills = request.skills();
+        this.deadline = request.deadline();
+    }
 }
