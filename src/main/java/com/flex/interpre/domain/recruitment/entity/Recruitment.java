@@ -17,6 +17,21 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+
+@NamedEntityGraph(
+        name = "Recruitment.withDetails",
+        attributeNodes = {
+                @NamedAttributeNode("company"),
+                @NamedAttributeNode("jobAreas"),
+                @NamedAttributeNode("jobFirsts"),
+                @NamedAttributeNode("jobSeconds"),
+                @NamedAttributeNode("jobThirds"),
+                @NamedAttributeNode("employmentTypes"),
+                @NamedAttributeNode("requirements"),
+                @NamedAttributeNode("benefits"),
+                @NamedAttributeNode("skills")
+        }
+)
 @Entity
 @Getter @Builder
 @EntityListeners(AuditingEntityListener.class)
