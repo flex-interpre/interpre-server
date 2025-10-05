@@ -43,7 +43,7 @@ public class RecruitmentService {
     // 공고문 전체 조회
     @Transactional(readOnly = true)
     public Page<RecruitmentSummaryResponse> getAllRecruitments(Pageable pageable) {
-        Page<Recruitment> recruitmentPage = recruitmentRepository.findAllWithCompany(pageable);
+        Page<Recruitment> recruitmentPage = recruitmentRepository.findAllActive(pageable);
 
         return recruitmentPage.map(RecruitmentSummaryResponse::from);
     }
@@ -98,7 +98,7 @@ public class RecruitmentService {
     }
 
     private Recruitment getRecruitmentById(UUID recruitmentId) {
-        return recruitmentRepository.findByIdWithCompany(recruitmentId)
+        return recruitmentRepository.findByIdWithDetails(recruitmentId)
                 .orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
     }
 }

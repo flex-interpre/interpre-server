@@ -14,10 +14,11 @@ import java.util.UUID;
 @Repository
 public interface RecruitmentRepository extends JpaRepository<Recruitment, UUID> {
 
-    // 기업 엔티티와 공고문 페치 조인
-    @Query("SELECT r FROM Recruitment r JOIN FETCH r.company WHERE r.id = :id")
-    Optional<Recruitment> findByIdWithCompany(@Param("id") UUID id);
+    // 공고 목록 조회 시 활성화된 공고만 조회, 연관 테이블 페치 조인
+    @Query(value = "SELECT DISTINCT r FROM Recruitment r JOIN FETCH r.company LEFT JOIN FETCH r.jobGroups WHERE r.active = true", countQuery = "SELECT COUNT(r) FROM Recruitment r WHERE r.active = true")
+    Page<Recruitment> findAllActive(Pageable pageable);
 
-    @Query("SELECT DISTINCT r FROM Recruitment r JOIN FETCH r.company")
-    Page<Recruitment> findAllWithCompany(Pageable pageable);
+    // 공고 상세 조회 시 연관 테이블 모두 페치 조인
+    @Query("SELECT r FROM Recruitment r JOIN FETCH r.company LEFT JOIN FETCH r.jobGroups LEFT JOIN FETCH r.jobs LEFT JOIN FETCH r.employmentTypes LEFT JOIN FETCH r.requirements LEFT JOIN FETCH r.benefits LEFT JOIN FETCH r.skills WHERE r.id = :id")
+    Optional<Recruitment> findByIdWithDetails(@Param("id") UUID id);
 }
