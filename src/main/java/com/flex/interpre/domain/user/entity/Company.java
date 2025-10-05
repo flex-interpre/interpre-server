@@ -17,8 +17,7 @@ public class Company {
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "user_id")
+    @MapsId @JoinColumn(name = "user_id")
     private User user;
 
     @Column(name="company_name", nullable = false, length = 200)

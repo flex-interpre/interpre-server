@@ -30,8 +30,10 @@ public class RecruitmentService {
     @Transactional
     @PreAuthorize("hasRole('COMPANY')")
     public RecruitmentResponse createRecruitment(User user, RecruitmentCreateUpdateRequest request) {
-        Company company = companyRepository.findById(user.getId()) // 기업 조회
-                .orElseThrow(RecruitmentExceptions.COMPANY_NOT_FOUND::toException);
+        Company company = user.getCompany(); // 유저로부터 해당 기업 조회
+        if (company == null) {
+            throw RecruitmentExceptions.COMPANY_NOT_FOUND.toException();
+        }
 
         Recruitment recruitment = Recruitment.create(request, company); // 공고문 생성
         recruitmentRepository.save(recruitment);
