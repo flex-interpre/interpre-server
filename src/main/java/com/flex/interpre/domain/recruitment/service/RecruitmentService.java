@@ -13,6 +13,7 @@ import com.flex.interpre.domain.user.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +28,8 @@ public class RecruitmentService {
 
     // 공고문 생성
     @Transactional
+    @PreAuthorize("hasRole('COMPANY')")
     public RecruitmentResponse createRecruitment(User user, RecruitmentCreateUpdateRequest request) {
-        validateCompanyRole(user); // 기업인지 확인
         Company company = companyRepository.findById(user.getId()) // 기업 조회
                 .orElseThrow(RecruitmentExceptions.COMPANY_NOT_FOUND::toException);
 
@@ -56,10 +57,8 @@ public class RecruitmentService {
 
     // 공고문 업데이트
     @Transactional
+    @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
     public RecruitmentResponse updateRecruitment(User user, Recruitment recruitment, RecruitmentCreateUpdateRequest request) {
-        validateCompanyRole(user);
-
-        checkRecruitmentOwner(recruitment, user); // 본인 회사가 등록한 공고인지 확인
         recruitment.update(request); // 공고문 업데이트
 
         return RecruitmentResponse.from(recruitment);
@@ -67,27 +66,9 @@ public class RecruitmentService {
 
     // 공고문 삭제
     @Transactional
+    @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
     public void deleteRecruitment(User user, Recruitment recruitment) {
-        validateCompanyRole(user);
-
-        checkRecruitmentOwner(recruitment, user);
 
         recruitmentRepository.delete(recruitment);
-    }
-
-    /*  내부 메서드  */
-
-    // 유저가 기업 Role인지 검증
-    private void validateCompanyRole(User user) {
-        if (user.getRole() != Role.COMPANY) {
-            throw RecruitmentExceptions.INVALID_ROLE.toException();
-        }
-    }
-
-    // 해당 공고문이 본인 기업의 것인지 확인
-    private void checkRecruitmentOwner(Recruitment recruitment, User user){
-        if (!recruitment.getCompany().getUser().getId().equals(user.getId())) {
-            throw RecruitmentExceptions.ACCESS_DENIED.toException();
-        }
     }
 }
