@@ -48,8 +48,7 @@ public class RecruitmentService {
 
     // 공고문 상세 조회
     @Transactional
-    public RecruitmentResponse getRecruitment(UUID recruitmentId) {
-        Recruitment recruitment = getRecruitmentById(recruitmentId);
+    public RecruitmentResponse getRecruitment(Recruitment recruitment) {
         recruitment.increaseViewCount(); // 조회 시 조회수 증가
 
         return RecruitmentResponse.from(recruitment);
@@ -57,12 +56,10 @@ public class RecruitmentService {
 
     // 공고문 업데이트
     @Transactional
-    public RecruitmentResponse updateRecruitment(User user, UUID recruitmentId, RecruitmentCreateUpdateRequest request) {
+    public RecruitmentResponse updateRecruitment(User user, Recruitment recruitment, RecruitmentCreateUpdateRequest request) {
         validateCompanyRole(user);
 
-        Recruitment recruitment = getRecruitmentById(recruitmentId);
         checkRecruitmentOwner(recruitment, user); // 본인 회사가 등록한 공고인지 확인
-
         recruitment.update(request); // 공고문 업데이트
 
         return RecruitmentResponse.from(recruitment);
@@ -70,10 +67,9 @@ public class RecruitmentService {
 
     // 공고문 삭제
     @Transactional
-    public void deleteRecruitment(User user, UUID recruitmentId) {
+    public void deleteRecruitment(User user, Recruitment recruitment) {
         validateCompanyRole(user);
 
-        Recruitment recruitment = getRecruitmentById(recruitmentId);
         checkRecruitmentOwner(recruitment, user);
 
         recruitmentRepository.delete(recruitment);
@@ -93,10 +89,5 @@ public class RecruitmentService {
         if (!recruitment.getCompany().getUser().getId().equals(user.getId())) {
             throw RecruitmentExceptions.ACCESS_DENIED.toException();
         }
-    }
-
-    private Recruitment getRecruitmentById(UUID recruitmentId) {
-        return recruitmentRepository.findByIdWithDetails(recruitmentId)
-                .orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
     }
 }

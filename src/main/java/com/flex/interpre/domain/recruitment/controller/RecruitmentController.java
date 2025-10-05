@@ -4,6 +4,7 @@ package com.flex.interpre.domain.recruitment.controller;
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
+import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.service.RecruitmentService;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
@@ -17,7 +18,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/recruitments")
@@ -39,20 +39,20 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 상세 조회")
     @GetMapping("/{recruitmentId}")
-    public ApiResponse<RecruitmentResponse> getRecruitment(@PathVariable UUID recruitmentId) {
-        return ApiResponse.ok(recruitmentService.getRecruitment(recruitmentId));
+    public ApiResponse<RecruitmentResponse> getRecruitment(@PathVariable Recruitment recruitment) {
+        return ApiResponse.ok(recruitmentService.getRecruitment(recruitment));
     }
 
     @Operation(summary = "공고문 수정")
     @PutMapping("/{recruitmentId}")
-    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal User user, @PathVariable UUID recruitmentId, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
-        return ApiResponse.ok(recruitmentService.updateRecruitment(user, recruitmentId, request));
+    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal User user, @PathVariable Recruitment recruitment, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
+        return ApiResponse.ok(recruitmentService.updateRecruitment(user, recruitment, request));
     }
 
     @Operation(summary = "공고문 삭제")
     @DeleteMapping("/{recruitmentId}")
-    public ApiResponse<Void> deleteRecruitment(@AuthenticationPrincipal User user, @PathVariable UUID recruitmentId) {
-        recruitmentService.deleteRecruitment(user, recruitmentId);
+    public ApiResponse<Void> deleteRecruitment(@AuthenticationPrincipal User user, @PathVariable Recruitment recruitment) {
+        recruitmentService.deleteRecruitment(user, recruitment);
         return ApiResponse.ok();
     }
 }
