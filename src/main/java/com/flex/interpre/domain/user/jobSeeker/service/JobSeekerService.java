@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +19,7 @@ public class JobSeekerService {
 
     private final JobSeekerRepository jobSeekerRepository;
 
+    @Transactional(readOnly = true)
     public BookMarkListResponse getBookmarks(User user) {
 
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
@@ -25,6 +27,7 @@ public class JobSeekerService {
 
     }
 
+    @Transactional
     public void addBookmark(Recruitment recruitment, @AuthenticationPrincipal User user) {
 
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
@@ -33,6 +36,7 @@ public class JobSeekerService {
         jobSeekerRepository.save(jobSeeker);
     }
 
+    @Transactional
     public void deleteBookmark(Recruitment recruitment, @AuthenticationPrincipal User user) {
 
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
