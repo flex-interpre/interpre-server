@@ -1,6 +1,11 @@
 package com.flex.interpre.domain.user.entity;
 
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
+import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
+import com.flex.interpre.global.constant.Area;
+import com.flex.interpre.global.constant.JobFirst;
+import com.flex.interpre.global.constant.JobSecond;
+import com.flex.interpre.global.constant.JobThird;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,10 +14,8 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter @Setter @Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
@@ -28,23 +31,43 @@ public class JobSeeker {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private Education education;
 
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "job_seeker_desired_areas",
-            joinColumns = @JoinColumn(name = "job_seeker_id"))
+    @CollectionTable(name = "job_seeker_desired_areas", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "desired_area")
-    @Builder.Default
+    @Column(name = "desired_area") @Builder.Default
     private Set<Area> desiredAreas = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "job_seeker_desired_categories",
-            joinColumns = @JoinColumn(name = "job_seeker_id"))
-    @Column(name = "desired_job_category")
-    @Builder.Default
-    private Set<JobCategory> desiredJobCategories = new HashSet<>();
+    @CollectionTable(name = "job_seeker_job_firsts", joinColumns = @JoinColumn(name = "job_seeker_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_first") @Builder.Default
+    private Set<JobFirst> jobFirsts = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "job_seeker_job_seconds", joinColumns = @JoinColumn(name = "job_seeker_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_second") @Builder.Default
+    private Set<JobSecond> jobSeconds = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "job_seeker_job_thirds", joinColumns = @JoinColumn(name = "job_seeker_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_third") @Builder.Default
+    private Set<JobThird> jobThirds = new HashSet<>();
+
+
+    // 구직자 정보 수정 메서드
+    public void update(UpdateMyJobSeekerInfo request) {
+        this.name = request.name();
+        this.education = request.education();
+        this.desiredAreas = request.desiredAreas();
+        this.jobFirsts = request.jobFirsts();
+        this.jobSeconds = request.jobSeconds();
+        this.jobThirds = request.jobThirds();
+    }
 
     @ManyToMany
     @JoinTable(
@@ -54,4 +77,5 @@ public class JobSeeker {
     )
     @Builder.Default
     private Set<Recruitment> bookmarkedRecruitments = new HashSet<>();
+
 }
