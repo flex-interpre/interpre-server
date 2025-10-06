@@ -1,7 +1,10 @@
 package com.flex.interpre.domain.recruitment.dto.response;
 
 import com.flex.interpre.domain.recruitment.entity.*;
-import jakarta.annotation.Nonnull;
+import com.flex.interpre.global.constant.Area;
+import com.flex.interpre.global.constant.JobSecond;
+import com.flex.interpre.global.constant.JobFirst;
+import com.flex.interpre.global.constant.JobThird;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -13,17 +16,24 @@ public record RecruitmentResponse(
         UUID id,
         CompanySummaryResponse company,
         String title,
-        Set<JobGroup> jobGroups,
-        Set<Job> jobs,
+        String description,
+        LocalDateTime deadline,
+
+        Set<Area> jobAreas,
+        String location,
+
+        Set<JobFirst> jobFirsts,
+        Set<JobSecond> jobSeconds,
+        Set<JobThird> jobThirds,
         Set<EmploymentType> employmentTypes,
+
         Integer minExperience,
         Integer maxExperience,
-        String location,
-        String description,
+
         Set<String> requirements,
         Set<String> benefits,
         Set<String> skills,
-        LocalDateTime deadline,
+
         boolean active,
         int viewCount,
         LocalDateTime createdAt,
@@ -34,17 +44,24 @@ public record RecruitmentResponse(
                 .id(recruitment.getId())
                 .company(CompanySummaryResponse.from(recruitment.getCompany()))
                 .title(recruitment.getTitle())
-                .jobGroups(recruitment.getJobGroups())
-                .jobs(recruitment.getJobs())
+                .description(recruitment.getDescription())
+                .deadline(recruitment.getDeadline())
+
+                .jobAreas(recruitment.getJobAreas())
+                .location(recruitment.getLocation())
+
+                .jobFirsts(recruitment.getJobFirsts())
+                .jobSeconds(recruitment.getJobSeconds())
+                .jobThirds(recruitment.getJobThirds())
                 .employmentTypes(recruitment.getEmploymentTypes())
+
                 .minExperience(recruitment.getMinExperience())
                 .maxExperience(recruitment.getMaxExperience())
-                .location(recruitment.getLocation())
-                .description(recruitment.getDescription())
+
                 .requirements(recruitment.getRequirements())
                 .benefits(recruitment.getBenefits())
                 .skills(recruitment.getSkills())
-                .deadline(recruitment.getDeadline())
+
                 .active(recruitment.isActive())
                 .viewCount(recruitment.getViewCount())
                 .createdAt(recruitment.getCreatedAt())

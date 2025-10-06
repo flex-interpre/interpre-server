@@ -64,10 +64,7 @@ public class UserService {
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-        jobSeeker.setName(request.name());
-        jobSeeker.setEducation(request.education());
-        jobSeeker.setDesiredAreas(request.desiredAreas());
-        jobSeeker.setDesiredJobCategories(request.desiredJobCategories());
+        jobSeeker.update(request);
 
         return MyJobSeekerInfo.from(jobSeeker);
     }
@@ -76,11 +73,7 @@ public class UserService {
         Company company = companyRepository.findByIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-        company.setCompanyName(request.companyName());
-        company.setAddress(request.address());
-        company.setWebsite(request.website());
-        company.setDescription(request.description());
-        company.setLogoUrl(request.logoUrl());
+        company.update(request);
 
         return MyCompanyInfo.from(company);
     }
