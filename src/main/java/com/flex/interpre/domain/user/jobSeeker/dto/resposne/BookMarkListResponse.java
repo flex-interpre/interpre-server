@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.user.jobSeeker.dto.resposne;
 
+import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -13,10 +14,10 @@ import java.util.Set;
 @Schema(description = "북마크 목록 응답")
 public class BookMarkListResponse {
 
-    List<BookMarkResponse> bookmarks;
+    List<RecruitmentSummaryResponse> bookmarks;
 
     public static BookMarkListResponse from(Set<Recruitment> recruitments) {
 
-        return BookMarkListResponse.of(recruitments.stream().map(BookMarkResponse::from).toList());
+        return BookMarkListResponse.of(recruitments.stream().map(RecruitmentSummaryResponse::from).toList());
     }
 }
