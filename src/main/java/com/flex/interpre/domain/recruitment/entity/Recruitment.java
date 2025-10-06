@@ -62,7 +62,7 @@ public class Recruitment {
     @Column(name = "job_area", nullable = false) @Builder.Default
     private Set<Area> jobAreas = new HashSet<>();
 
-    @Column(nullable = false, length = 200)
+    @Column(length = 200)
     String location;
 
     @ElementCollection(fetch = FetchType.LAZY)

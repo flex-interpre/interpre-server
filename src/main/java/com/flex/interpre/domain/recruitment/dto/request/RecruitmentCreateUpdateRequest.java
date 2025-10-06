@@ -17,7 +17,7 @@ public record RecruitmentCreateUpdateRequest(
         @Future LocalDateTime deadline,
 
         @NotEmpty Set<Area> jobAreas,
-        @NotBlank String location,
+        String location,
 
         @NotEmpty Set<JobFirst> jobFirsts,
         @NotEmpty Set<JobSecond> jobSeconds,
