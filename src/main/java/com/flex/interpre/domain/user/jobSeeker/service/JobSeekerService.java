@@ -3,7 +3,6 @@ package com.flex.interpre.domain.user.jobSeeker.service;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import com.flex.interpre.domain.user.entity.User;
-import com.flex.interpre.domain.user.exception.UserExceptions;
 import com.flex.interpre.domain.user.jobSeeker.dto.resposne.BookMarkListResponse;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ public class JobSeekerService {
     @Transactional(readOnly = true)
     public BookMarkListResponse getBookmarks(User user) {
 
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+        JobSeeker jobSeeker = user.getJobSeeker();
         return BookMarkListResponse.from(jobSeeker.getBookmarkedRecruitments());
 
     }
@@ -30,7 +29,7 @@ public class JobSeekerService {
     @Transactional
     public void addBookmark(Recruitment recruitment, @AuthenticationPrincipal User user) {
 
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+        JobSeeker jobSeeker = user.getJobSeeker();
 
         jobSeeker.getBookmarkedRecruitments().add(recruitment);
         jobSeekerRepository.save(jobSeeker);
@@ -39,7 +38,7 @@ public class JobSeekerService {
     @Transactional
     public void deleteBookmark(Recruitment recruitment, @AuthenticationPrincipal User user) {
 
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId()).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+        JobSeeker jobSeeker = user.getJobSeeker();
 
         jobSeeker.getBookmarkedRecruitments().remove(recruitment);
         jobSeekerRepository.save(jobSeeker);
