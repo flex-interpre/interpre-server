@@ -14,16 +14,20 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter @Setter @Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
+    @Getter(AccessLevel.NONE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -37,25 +41,29 @@ public class JobSeeker {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_desired_areas", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "desired_area") @Builder.Default
+    @Column(name = "desired_area")
+    @Builder.Default
     private Set<Area> desiredAreas = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_job_firsts", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "job_first") @Builder.Default
+    @Column(name = "job_first")
+    @Builder.Default
     private Set<JobFirst> jobFirsts = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_job_seconds", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "job_second") @Builder.Default
+    @Column(name = "job_second")
+    @Builder.Default
     private Set<JobSecond> jobSeconds = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_job_thirds", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "job_third") @Builder.Default
+    @Column(name = "job_third")
+    @Builder.Default
     private Set<JobThird> jobThirds = new HashSet<>();
 
 

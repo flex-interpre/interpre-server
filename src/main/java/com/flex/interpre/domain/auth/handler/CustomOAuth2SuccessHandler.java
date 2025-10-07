@@ -1,7 +1,11 @@
 package com.flex.interpre.domain.auth.handler;
 
+import com.flex.interpre.domain.user.entity.Company;
+import com.flex.interpre.domain.user.entity.JobSeeker;
 import com.flex.interpre.domain.user.entity.Role;
 import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.user.repository.CompanyRepository;
+import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import com.flex.interpre.domain.user.repository.UserRepository;
 import com.flex.interpre.global.property.UrlProperty;
 import com.flex.interpre.global.security.jwt.JwtUtil;
@@ -28,6 +32,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final UrlProperty urlProperty;
+    private final CompanyRepository companyRepository;
+    private final JobSeekerRepository jobSeekerRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -71,10 +77,9 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
     private User from(Map<String, Object> attributes, Role role) {
 
-        boolean approved = true;
-        if (role == Role.COMPANY) approved = false;
+        boolean approved = role != Role.COMPANY;
 
-        return userRepository.save(
+        User user = userRepository.save(
                 User.builder()
                         .email((String) attributes.get("email"))
                         .googleId((String) attributes.get("sub"))
@@ -82,6 +87,22 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                         .approved(approved)
                         .build()
         );
+
+        if (role == Role.COMPANY) {
+            Company company = Company.builder()
+                    .user(user)
+                    .build();
+            companyRepository.save(company);
+        } else if (role == Role.JOB_SEEKER) {
+            JobSeeker jobSeeker = JobSeeker.builder()
+                    .user(user)
+                    .name((String) attributes.get("name"))
+                    .build();
+            jobSeekerRepository.save(jobSeeker);
+        }
+
+        return user;
+
     }
 
     private void setCookie(String accessToken, String refreshToken, boolean firstLogin, HttpServletResponse response) {
