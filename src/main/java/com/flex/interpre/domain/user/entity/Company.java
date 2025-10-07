@@ -15,11 +15,12 @@ import java.util.UUID;
 @Table(name = "companies")
 public class Company {
     @Id
+    @Getter(AccessLevel.NONE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
     @JoinColumn(name = "user_id")
     private User user;
 
