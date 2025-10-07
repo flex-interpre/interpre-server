@@ -7,8 +7,11 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
-@Getter @Setter @Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "companies")
 public class Company {
     @Id
@@ -16,13 +19,14 @@ public class Company {
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId @JoinColumn(name = "user_id")
+    @MapsId
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name="company_name", nullable = false, length = 200)
+    @Column(name = "company_name", length = 200)
     private String companyName;
 
-    @Column(name="business_number", nullable = false, length = 50, unique = true)
+    @Column(name = "business_number", length = 50, unique = true)
     private String businessNumber;
 
     @Column(columnDefinition = "TEXT")
@@ -36,7 +40,6 @@ public class Company {
 
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
-
 
 
     // 기업 정보 수정 메서드
