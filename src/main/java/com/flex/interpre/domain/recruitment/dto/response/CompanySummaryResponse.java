@@ -13,7 +13,7 @@ public record CompanySummaryResponse(
 ){
     public static CompanySummaryResponse from(Company company) {
         return CompanySummaryResponse.builder()
-                .id(company.getId())
+                .id(company.getUser().getId())
                 .name(company.getCompanyName())
                 .logoUrl(company.getLogoUrl())
                 .build();

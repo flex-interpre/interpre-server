@@ -4,9 +4,11 @@ import com.flex.interpre.domain.user.entity.Company;
 import jakarta.annotation.Nonnull;
 import lombok.Builder;
 
+import java.util.UUID;
+
 @Builder
 public record MyCompanyInfo(
-        String googleId,
+        UUID id,
         String email,
         String companyName,
         String businessNumber,
@@ -17,7 +19,7 @@ public record MyCompanyInfo(
 ) implements MyUserDetailInfo {
     public static MyCompanyInfo from(@Nonnull Company company) {
         return MyCompanyInfo.builder()
-                .googleId(company.getUser().getGoogleId())
+                .id(company.getUser().getId())
                 .email(company.getUser().getEmail())
                 .companyName(company.getCompanyName())
                 .businessNumber(company.getBusinessNumber())
