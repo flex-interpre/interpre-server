@@ -1,15 +1,17 @@
 package com.flex.interpre.domain.user.jobSeeker.service;
 
+import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import com.flex.interpre.domain.user.entity.User;
-import com.flex.interpre.domain.user.jobSeeker.dto.resposne.BookMarkListResponse;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,10 +21,10 @@ public class JobSeekerService {
     private final JobSeekerRepository jobSeekerRepository;
 
     @Transactional(readOnly = true)
-    public BookMarkListResponse getBookmarks(User user) {
+    public List<RecruitmentSummaryResponse> getBookmarks(User user) {
 
         JobSeeker jobSeeker = user.getJobSeeker();
-        return BookMarkListResponse.from(jobSeeker.getBookmarkedRecruitments());
+        return jobSeeker.getBookmarkedRecruitments().stream().map(RecruitmentSummaryResponse::from).toList();
 
     }
 

@@ -1,8 +1,8 @@
 package com.flex.interpre.domain.user.jobSeeker.controller;
 
+import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.user.entity.User;
-import com.flex.interpre.domain.user.jobSeeker.dto.resposne.BookMarkListResponse;
 import com.flex.interpre.domain.user.jobSeeker.service.JobSeekerService;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,7 +23,7 @@ public class JobSeekerController {
 
     @GetMapping
     @Operation(summary = "북마크 조회 api 요청")
-    public ApiResponse<BookMarkListResponse> getBookmarks(@AuthenticationPrincipal User user) {
+    public ApiResponse<List<RecruitmentSummaryResponse>> getBookmarks(@AuthenticationPrincipal User user) {
 
         return ApiResponse.ok(jobSeekerService.getBookmarks(user));
     }
