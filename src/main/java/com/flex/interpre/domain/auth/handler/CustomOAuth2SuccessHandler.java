@@ -90,12 +90,12 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         if (role == Role.COMPANY) {
             Company company = Company.builder()
-                    .user(userRepository.getReferenceById(user.getId()))
+                    .user(user)
                     .build();
             companyRepository.save(company);
         } else if (role == Role.JOB_SEEKER) {
             JobSeeker jobSeeker = JobSeeker.builder()
-                    .user(userRepository.getReferenceById(user.getId()))
+                    .user(user)
                     .name((String) attributes.get("name"))
                     .build();
             jobSeekerRepository.save(jobSeeker);
