@@ -49,3 +49,13 @@ app:
       http://localhost:3000
 
 
+aws:
+  credentials:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+  s3:
+    bucket: ${BUCKET_NAME}
+  region:
+    static: ${BUCKET_REGION}
+  stack:
+    auto: false
