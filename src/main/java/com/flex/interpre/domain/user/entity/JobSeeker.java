@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.user.entity;
 
+import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
@@ -9,12 +10,16 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter @Setter @Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED) @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
@@ -36,26 +41,33 @@ public class JobSeeker {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_desired_areas", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "desired_area") @Builder.Default
+    @Column(name = "desired_area")
+    @Builder.Default
     private Set<Area> desiredAreas = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_job_firsts", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "job_first") @Builder.Default
+    @Column(name = "job_first")
+    @Builder.Default
     private Set<JobFirst> jobFirsts = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_job_seconds", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "job_second") @Builder.Default
+    @Column(name = "job_second")
+    @Builder.Default
     private Set<JobSecond> jobSeconds = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "job_seeker_job_thirds", joinColumns = @JoinColumn(name = "job_seeker_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "job_third") @Builder.Default
+    @Column(name = "job_third")
+    @Builder.Default
     private Set<JobThird> jobThirds = new HashSet<>();
+
+    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
+    List<Interview> interviews;
 
 
     // 구직자 정보 수정 메서드
