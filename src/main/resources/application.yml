@@ -59,3 +59,9 @@ aws:
     static: ${BUCKET_REGION}
   stack:
     auto: false
+
+naver:
+  clova:
+    url: ${CLOVA_BASE_URL}
+    api-key-id: ${CLOVA_REQUEST_ID}
+    api-key: ${CLOVA_API_KEY}
