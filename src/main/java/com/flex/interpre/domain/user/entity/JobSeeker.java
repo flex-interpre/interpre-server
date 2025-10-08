@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.user.entity;
 
+import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
 import com.flex.interpre.global.constant.Area;
@@ -23,11 +24,12 @@ import java.util.UUID;
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
+    @Getter(AccessLevel.NONE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -79,4 +81,14 @@ public class JobSeeker {
         this.jobSeconds = request.jobSeconds();
         this.jobThirds = request.jobThirds();
     }
+
+    @ManyToMany
+    @JoinTable(
+            name = "job_seeker_bookmarks",
+            joinColumns = @JoinColumn(name = "job_seeker_id"),
+            inverseJoinColumns = @JoinColumn(name = "recruitment_id")
+    )
+    @Builder.Default
+    private Set<Recruitment> bookmarkedRecruitments = new HashSet<>();
+
 }

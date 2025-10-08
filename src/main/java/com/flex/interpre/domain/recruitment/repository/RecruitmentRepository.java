@@ -18,5 +18,4 @@ public interface RecruitmentRepository extends JpaRepository<Recruitment, UUID> 
     @Query(value = "SELECT r FROM Recruitment r WHERE r.active = true", countQuery = "SELECT COUNT(r) FROM Recruitment r WHERE r.active = true")
     Page<Recruitment> findAllActive(Pageable pageable);
 
-
 }

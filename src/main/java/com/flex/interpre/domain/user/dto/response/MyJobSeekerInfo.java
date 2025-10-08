@@ -9,10 +9,11 @@ import jakarta.annotation.Nonnull;
 import lombok.Builder;
 
 import java.util.Set;
+import java.util.UUID;
 
 @Builder
 public record MyJobSeekerInfo(
-    String googleId,
+    UUID id,
     String email,
     String name,
     Education education,
@@ -23,7 +24,7 @@ public record MyJobSeekerInfo(
 ) implements MyUserDetailInfo {
     public static MyJobSeekerInfo from(@Nonnull JobSeeker jobSeeker) {
         return MyJobSeekerInfo.builder()
-                .googleId(jobSeeker.getUser().getGoogleId())
+                .id(jobSeeker.getUser().getId())
                 .email(jobSeeker.getUser().getEmail())
                 .name(jobSeeker.getName())
                 .education(jobSeeker.getEducation())
