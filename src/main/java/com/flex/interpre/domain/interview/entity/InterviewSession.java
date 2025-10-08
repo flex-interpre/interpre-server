@@ -20,6 +20,8 @@ public class InterviewSession {
 
     private UUID userId;
 
+    private UUID interviewId;
+
     @TimeToLive(unit = TimeUnit.HOURS)
     long ttl;
 }

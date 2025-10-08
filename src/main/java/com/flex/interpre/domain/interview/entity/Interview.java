@@ -3,6 +3,8 @@ package com.flex.interpre.domain.interview.entity;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+@Builder
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class Interview {
