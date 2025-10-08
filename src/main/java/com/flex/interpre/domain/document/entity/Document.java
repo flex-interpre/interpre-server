@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.document.entity;
 
+import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 @Entity
 @Getter
+@Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -52,4 +54,19 @@ public class Document {
 
     @Column(name = "document_vector", columnDefinition = "vector")
     private List<Double> documentVector;
+
+
+    public static Document create(JobSeeker jobSeeker, DocumentUploadRequest request,
+                                  String fileUrl, String extractedText, List<Double> embedding ){
+        return Document.builder()
+                .jobSeeker(jobSeeker)
+                .documentType(request.documentType())
+                .fileName(request.file().getOriginalFilename())
+                .fileUrl(fileUrl)
+                .fileSize((int) request.file().getSize())
+                .contentText(extractedText)
+                .documentVector(embedding)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
 }
