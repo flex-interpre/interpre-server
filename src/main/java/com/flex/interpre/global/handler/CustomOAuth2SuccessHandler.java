@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.auth.handler;
+package com.flex.interpre.global.handler;
 
 import com.flex.interpre.domain.user.entity.Role;
 import com.flex.interpre.domain.user.entity.User;
