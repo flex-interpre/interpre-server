@@ -4,6 +4,8 @@ import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -52,12 +54,12 @@ public class Document {
     @Column(columnDefinition = "text", nullable = false)
     private String contentText;
 
-    @Column(name = "document_vector", columnDefinition = "vector")
-    private List<Double> documentVector;
-
+    @JdbcTypeCode(SqlTypes.OTHER)
+    @Column(name = "document_vector", columnDefinition = "vector(1024)")
+    private float[] documentVector;
 
     public static Document create(JobSeeker jobSeeker, DocumentUploadRequest request,
-                                  String fileUrl, String extractedText, List<Double> embedding ){
+                                  String fileUrl, String extractedText, float[] embedding ){
         return Document.builder()
                 .jobSeeker(jobSeeker)
                 .documentType(request.documentType())
