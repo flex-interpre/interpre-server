@@ -98,7 +98,6 @@ public class S3DocumentUploader {
         try (InputStream inputStream = multipartFile.getInputStream()) {
             s3Client.putObject(
                     new PutObjectRequest(bucket, key, inputStream, metadata)
-                            .withCannedAcl(CannedAccessControlList.PublicRead)
             );
             log.info("S3 문서 업로드 성공: {}", key);
         } catch (IOException e) {
