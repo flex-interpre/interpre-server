@@ -47,21 +47,21 @@ public class UserService {
     /*    내부 메서드    */
 
     private MyJobSeekerInfo getJobSeekerInfo(User user){
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
+        JobSeeker jobSeeker = jobSeekerRepository.findByUserIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
         return MyJobSeekerInfo.from(jobSeeker);
     }
 
     private MyCompanyInfo getCompanyInfo(User user){
-        Company company = companyRepository.findByIdWithUser(user.getId())
+        Company company = companyRepository.findByUserIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
         return MyCompanyInfo.from(company);
     }
 
     private MyJobSeekerInfo updateJobSeekerInfo(User user, UpdateMyJobSeekerInfo request){
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithUser(user.getId())
+        JobSeeker jobSeeker = jobSeekerRepository.findByUserIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
         jobSeeker.update(request);
@@ -70,7 +70,7 @@ public class UserService {
     }
 
     private MyCompanyInfo updateCompanyInfo(User user, UpdateMyCompanyInfo request){
-        Company company = companyRepository.findByIdWithUser(user.getId())
+        Company company = companyRepository.findByUserIdWithUser(user.getId())
                 .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
         company.update(request);

@@ -9,5 +9,5 @@ import java.util.UUID;
 
 public interface CompanyRepository extends JpaRepository<Company, UUID> {
     @Query("SELECT c FROM Company c JOIN FETCH c.user u WHERE c.user.id = :id")
-    Optional<Company> findByIdWithUser(UUID id);
+    Optional<Company> findByUserIdWithUser(UUID id);
 }
