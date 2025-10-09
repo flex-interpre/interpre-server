@@ -13,7 +13,7 @@ import java.io.IOException;
 @Slf4j
 @Component
 public class PdfExtractor {
-    public String extract(MultipartFile file) throws IOException {
+    public String extract(MultipartFile file){
         try (PDDocument document = PDDocument.load(file.getInputStream())) {
 
             PDFTextStripper stripper = new PDFTextStripper();

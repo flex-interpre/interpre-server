@@ -21,7 +21,7 @@ public class DocumentController {
 
     // 문서 업로드 (multipart/form-data 요청)
     @PostMapping
-    public ApiResponse<DocumentResponse> uploadDocument(@AuthenticationPrincipal User user, @ModelAttribute DocumentUploadRequest request) throws IOException {
+    public ApiResponse<DocumentResponse> uploadDocument(@AuthenticationPrincipal User user, @ModelAttribute DocumentUploadRequest request){
         return ApiResponse.ok(documentService.uploadDocument(user, request));
     }
 
