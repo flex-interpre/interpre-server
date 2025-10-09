@@ -8,15 +8,12 @@ import com.flex.interpre.domain.user.entity.JobSeeker;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import com.flex.interpre.global.module.pdf.PdfExtractor;
-import com.flex.interpre.global.module.pdf.exception.PdfExtractorExceptions;
 import com.flex.interpre.global.module.s3.S3DocumentUploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

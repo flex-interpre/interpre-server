@@ -5,11 +5,11 @@ import com.flex.interpre.domain.document.dto.response.DocumentResponse;
 import com.flex.interpre.domain.document.service.DocumentService;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +19,7 @@ import java.util.UUID;
 public class DocumentController {
     private final DocumentService documentService;
 
-    // 문서 업로드 (multipart/form-data 요청)
+    @Operation(summary = "문서 업로드 (multipart/form-data 요청)")
     @PostMapping
     public ApiResponse<DocumentResponse> uploadDocument(@AuthenticationPrincipal User user, @ModelAttribute DocumentUploadRequest request){
         return ApiResponse.ok(documentService.uploadDocument(user, request));
