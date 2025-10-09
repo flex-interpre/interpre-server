@@ -57,10 +57,6 @@ dependencies {
 
     // PDFBox
     implementation 'org.apache.pdfbox:pdfbox:2.0.30'
-
-    // pgvector
-    implementation 'com.github.pgvector:pgvector-java:0.1.5'
-    implementation 'org.hibernate.orm:hibernate-core:6.5.2.Final'
 }
 
 tasks.named('test') {
