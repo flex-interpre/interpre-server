@@ -10,11 +10,12 @@ import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import com.flex.interpre.global.module.pdf.PdfExtractor;
 import com.flex.interpre.global.module.s3.S3DocumentUploader;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,7 +29,7 @@ public class DocumentService {
 
 
     @Transactional
-    @PreAuthorize("hasRole('JOBSEEKER')")
+    @PreAuthorize("hasRole('JOB_SEEKER')")
     public DocumentResponse uploadDocument(User user, DocumentUploadRequest request){
         JobSeeker jobSeeker = user.getJobSeeker();
 
