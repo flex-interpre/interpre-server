@@ -2,10 +2,9 @@ package com.flex.interpre.domain.document.entity;
 
 import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
 import com.flex.interpre.domain.user.entity.JobSeeker;
+import com.flex.interpre.global.config.VectorConverter;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -52,7 +51,7 @@ public class Document {
     @Column(columnDefinition = "text", nullable = false)
     private String contentText;
 
-    @JdbcTypeCode(SqlTypes.OTHER)
+    @Convert(converter = VectorConverter.class)
     @Column(name = "document_vector", columnDefinition = "vector(1024)")
     private float[] documentVector;
 
