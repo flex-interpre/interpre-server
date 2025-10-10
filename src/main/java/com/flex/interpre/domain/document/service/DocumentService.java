@@ -15,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,4 +46,21 @@ public class DocumentService {
         return DocumentResponse.from(document);
     }
 
+    public List<DocumentResponse> getDocuments(User user) {
+        JobSeeker jobSeeker = user.getJobSeeker();
+        if (jobSeeker == null) return List.of();
+
+        return documentRepository.findAllByJobSeekerIdAndDeletedAtIsNull(jobSeeker.getUser().getId()).stream()
+                .map(DocumentResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('JOB_SEEKER') and #document.jobSeeker.user.id == authentication.principal.id")
+    public void deleteDocument(Document document) {
+        s3Uploader.deleteDocument(document.getFileUrl()); // S3에서 파일 삭제
+
+        document.markAsDeleted(); // soft delete 처리
+        log.info("문서 삭제 성공: documentId={}", document.getId());
+    }
 }

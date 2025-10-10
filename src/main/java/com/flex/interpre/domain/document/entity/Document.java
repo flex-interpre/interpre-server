@@ -55,6 +55,8 @@ public class Document {
     @Column(name = "document_vector", columnDefinition = "vector(1024)")
     private float[] documentVector;
 
+    /* 메서드 */
+
     public static Document create(JobSeeker jobSeeker, DocumentUploadRequest request,
                                   String fileUrl, String extractedText, float[] embedding ){
         return Document.builder()
@@ -67,5 +69,9 @@ public class Document {
                 .documentVector(embedding)
                 .createdAt(LocalDateTime.now())
                 .build();
+    }
+
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();
     }
 }
