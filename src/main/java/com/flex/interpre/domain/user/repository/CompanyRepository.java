@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.user.repository;
 
-import com.flex.interpre.domain.user.entity.Company;
+import com.flex.interpre.domain.company.entity.Company;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

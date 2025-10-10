@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.user.dto.response;
 
-import com.flex.interpre.domain.user.entity.Company;
+import com.flex.interpre.domain.company.entity.Company;
 import jakarta.annotation.Nonnull;
 import lombok.Builder;
 

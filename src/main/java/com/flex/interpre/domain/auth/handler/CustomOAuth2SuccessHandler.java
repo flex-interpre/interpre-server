@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.auth.handler;
 
-import com.flex.interpre.domain.user.entity.Company;
+import com.flex.interpre.domain.company.entity.Company;
 import com.flex.interpre.domain.user.entity.JobSeeker;
 import com.flex.interpre.domain.user.entity.Role;
 import com.flex.interpre.domain.user.entity.User;
