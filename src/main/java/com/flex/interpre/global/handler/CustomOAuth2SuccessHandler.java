@@ -78,30 +78,28 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         boolean approved = role != Role.COMPANY;
 
-        User user = userRepository.save(
-                User.builder()
-                        .email((String) attributes.get("email"))
-                        .googleId((String) attributes.get("sub"))
-                        .role(role)
-                        .approved(approved)
-                        .build()
-        );
+        User user = User.builder()
+                .email((String) attributes.get("email"))
+                .googleId((String) attributes.get("sub"))
+                .role(role)
+                .approved(approved)
+                .build();
 
         if (role == Role.COMPANY) {
             Company company = Company.builder()
                     .user(user)
                     .build();
-            companyRepository.save(company);
+            user.setCompany(company);
+
         } else if (role == Role.JOB_SEEKER) {
             JobSeeker jobSeeker = JobSeeker.builder()
                     .user(user)
                     .name((String) attributes.get("name"))
                     .build();
-            jobSeekerRepository.save(jobSeeker);
+            user.setJobSeeker(jobSeeker);
         }
 
-        return user;
-
+        return userRepository.save(user);
     }
 
     private void setCookie(String accessToken, String refreshToken, boolean firstLogin, HttpServletResponse response) {
