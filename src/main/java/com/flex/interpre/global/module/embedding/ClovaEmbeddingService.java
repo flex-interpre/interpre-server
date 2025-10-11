@@ -58,7 +58,7 @@ public class ClovaEmbeddingService {
     private record Status(String code, String message) {}
     private record Result(List<Double> embedding, Integer totalTokens) {}
 
-    public float[] embed(String text) {
+    public List<Double> embed(String text) {
         validateInput(text);
 
         HttpHeaders headers = createHeaders();
@@ -110,7 +110,7 @@ public class ClovaEmbeddingService {
         return headers;
     }
 
-    private float[] extractEmbedding(EmbeddingResponse response) {
+    private List<Double> extractEmbedding(EmbeddingResponse response) {
         if (response == null) {
             log.error("API 응답이 null입니다.");
             throw ClovaEmbeddingExceptions.INVALID_RESPONSE.toException();
@@ -144,7 +144,8 @@ public class ClovaEmbeddingService {
         log.info("임베딩 성공: dimension={}, tokens={}",
                 embedding.size(), result.totalTokens());
 
-        return toFloatArray(embedding);
+//        return toFloatArray(embedding);
+        return embedding;
     }
 
     private float[] toFloatArray(List<Double> doubleList) {

@@ -37,7 +37,7 @@ public class DocumentService {
 
         String fileUrl = s3Uploader.uploadDocument(request.file(), DIR_NAME); // s3 저장 후 url
         String extractedText = pdfExtractor.extract(request.file()); // pdf -> text로 변환
-        float[] embedding = clovaEmbeddingService.embed(extractedText); // text -> embedding
+        List<Double> embedding = clovaEmbeddingService.embed(extractedText); // text -> embedding
 
         // db 저장
         Document document = Document.create(jobSeeker, request, fileUrl, extractedText, embedding);
