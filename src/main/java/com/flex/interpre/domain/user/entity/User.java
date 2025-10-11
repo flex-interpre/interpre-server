@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.user.entity;
 
+import com.flex.interpre.domain.company.entity.Company;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

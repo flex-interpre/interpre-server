@@ -1,6 +1,6 @@
-package com.flex.interpre.domain.recruitment.dto.response;
+package com.flex.interpre.domain.company.dto;
 
-import com.flex.interpre.domain.user.entity.Company;
+import com.flex.interpre.domain.company.entity.Company;
 import lombok.Builder;
 
 import java.util.UUID;

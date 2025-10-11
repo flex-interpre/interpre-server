@@ -8,6 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface JobSeekerRepository extends JpaRepository<JobSeeker, UUID> {
-    @Query("SELECT j FROM JobSeeker j JOIN FETCH j.user u WHERE j.id = :id")
-    Optional<JobSeeker> findByIdWithUser(UUID id);
+    @Query("SELECT j FROM JobSeeker j JOIN FETCH j.user u WHERE j.user.id = :id")
+    Optional<JobSeeker> findByUserIdWithUser(UUID id);
 }

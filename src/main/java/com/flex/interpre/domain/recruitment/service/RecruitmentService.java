@@ -4,10 +4,8 @@ import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateR
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.recruitment.exception.RecruitmentExceptions;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
-import com.flex.interpre.domain.user.entity.Company;
-import com.flex.interpre.domain.user.entity.Role;
+import com.flex.interpre.domain.company.entity.Company;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

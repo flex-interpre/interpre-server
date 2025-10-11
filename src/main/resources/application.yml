@@ -1,23 +1,35 @@
 server:
   servlet:
     context-path: /api
+  tomcat:
+    max-http-header-size: 65536     # HTTP 헤더 최대 크기 확장 (64KB)
+    max-swallow-size: -1            # 업로드 중단 방지
+    max-http-form-post-size: -1     # 폼데이터 크기 제한 해제
+    connection-timeout: 20000
+    max-post-size: -1
 
 spring:
+  servlet:
+    multipart:
+      enabled: true
+      resolve-lazily: true          # 업로드 처리 지연 (Tomcat 파싱 충돌 방지)
+      max-file-size: 50MB           # 파일 하나당 최대 크기
+      max-request-size: 50MB        # 요청 전체 최대 크기
+
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_SECRET}
-            scope:
-              - profile
-              - email
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+
   data:
     redis:
       host: ${REDIS_HOST}
@@ -32,13 +44,17 @@ spring:
           min-idle: 0
           max-wait: 3000ms
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect # PostgreSQL 문법 지정
-    show-sql: true # 로그 확인용 sql 쿼리문 확인
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_SECRET}
+            scope:
+              - profile
+              - email
+
 app:
   jwt:
     key: ${JWT_SECRET_KEY}
@@ -46,6 +62,21 @@ app:
     refresh-expiration: 720
   oauth2:
     allowed-urls:
-      http://localhost:3000
+      - http://localhost:3000
 
+aws:
+  credentials:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+  s3:
+    bucket: ${BUCKET_NAME}
+  region:
+    static: ${BUCKET_REGION}
+  stack:
+    auto: false
 
+naver:
+  clova:
+    url: ${CLOVA_BASE_URL}
+    api-key-id: ${CLOVA_REQUEST_ID}
+    api-key: ${CLOVA_API_KEY}
