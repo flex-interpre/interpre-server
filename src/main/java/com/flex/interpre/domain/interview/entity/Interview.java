@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Interview {
 
     @Id
@@ -34,6 +36,6 @@ public class Interview {
     private Integer durationSecond;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "jobSeeker_id")
+    @JoinColumn(name = "job_seeker_id")
     private JobSeeker jobSeeker;
 }

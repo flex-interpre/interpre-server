@@ -46,6 +46,10 @@ app:
     refresh-expiration: 720
   oauth2:
     allowed-urls:
-      http://localhost:3000
+      - http://localhost:3000
+  clova:
+    id: ${CLOAVA_CLIENT_ID}
+    secret: ${CLOAVA_CLIENT_SECRET}
+    url: ${CLOVA_URL}
 
 

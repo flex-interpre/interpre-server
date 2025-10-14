@@ -44,7 +44,6 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         //role 파라미터 가져오기
         String roleParam = extractRoleFromState(state);
         String callBackUrl = extractCallBackFromState(state);
-
         Role role = Role.valueOf(
                 roleParam != null ? roleParam.toUpperCase() : "JOB_SEEKER"
         );
@@ -79,20 +78,19 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         boolean approved = role != Role.COMPANY;
 
-        User user = userRepository.save(
-                User.builder()
-                        .email((String) attributes.get("email"))
-                        .googleId((String) attributes.get("sub"))
-                        .role(role)
-                        .approved(approved)
-                        .build()
-        );
+        User user = userRepository.save(User.builder()
+                .email((String) attributes.get("email"))
+                .googleId((String) attributes.get("sub"))
+                .role(role)
+                .approved(approved)
+                .build());
 
         if (role == Role.COMPANY) {
             Company company = Company.builder()
                     .user(user)
                     .build();
             companyRepository.save(company);
+
         } else if (role == Role.JOB_SEEKER) {
             JobSeeker jobSeeker = JobSeeker.builder()
                     .user(user)
@@ -102,7 +100,6 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         }
 
         return user;
-
     }
 
     private void setCookie(String accessToken, String refreshToken, boolean firstLogin, HttpServletResponse response) {
@@ -160,7 +157,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     }
 
     private boolean isAllowedUrl(String callBackUrl) {
-        if (callBackUrl == null || urlProperty.getUrls() == null) return false;
-        return urlProperty.getUrls().contains(callBackUrl);
+        if (callBackUrl == null || urlProperty.getAllowedUrls() == null) return false;
+        return urlProperty.getAllowedUrls().contains(callBackUrl);
     }
 }

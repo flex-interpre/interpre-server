@@ -13,5 +13,5 @@ import java.util.Set;
 public class UrlProperty {
 
     @NotBlank
-    private Set<String> urls;
+    private Set<String> allowedUrls;
 }
