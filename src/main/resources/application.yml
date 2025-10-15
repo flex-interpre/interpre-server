@@ -21,16 +21,6 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_SECRET}
-            scope:
-              - profile
-              - email
   jpa:
     hibernate:
       ddl-auto: update
@@ -76,6 +66,11 @@ app:
     secret: ${CLOAVA_CLIENT_SECRET}
     url: ${CLOVA_URL}
       - http://localhost:3000
+  bedrock:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    region: ${BUCKET_REGION}
+    model-id: anthropic.claude-3-5-sonnet-20240620-v1:0
 
 aws:
   credentials:
