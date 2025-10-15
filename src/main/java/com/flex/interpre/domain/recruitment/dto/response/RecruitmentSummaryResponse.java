@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.recruitment.dto.response;
 
+import com.flex.interpre.domain.company.dto.CompanySummaryResponse;
 import com.flex.interpre.global.constant.JobFirst;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import lombok.Builder;

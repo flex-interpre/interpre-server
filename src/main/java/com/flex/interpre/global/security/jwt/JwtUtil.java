@@ -79,6 +79,7 @@ public class JwtUtil {
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(jwtProperty.getTokenExpiration(), ChronoUnit.HOURS))
                 .withClaim("id", user.getId().toString())
+                .withClaim("role", user.getRole().name())
                 .withClaim("type", TokenType.ACCESS.name())
                 .sign(algorithm());
     }
@@ -89,6 +90,7 @@ public class JwtUtil {
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(jwtProperty.getRefreshExpiration(), ChronoUnit.HOURS))
                 .withClaim("id", user.getId().toString())
+                .withClaim("role", user.getRole().name())
                 .withClaim("type", TokenType.REFRESH.name())
                 .sign(algorithm());
 
