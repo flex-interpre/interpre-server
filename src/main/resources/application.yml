@@ -64,8 +64,8 @@ app:
   clova:
     id: ${CLOAVA_CLIENT_ID}
     secret: ${CLOAVA_CLIENT_SECRET}
-    url: ${CLOVA_URL}
-      - http://localhost:3000
+    stt-url: ${CLOVA_STT_URL}
+    tts-url: ${CLOVA_TTS_URL}
   bedrock:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}

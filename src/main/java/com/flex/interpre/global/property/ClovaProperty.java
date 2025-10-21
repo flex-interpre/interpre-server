@@ -18,5 +18,8 @@ public class ClovaProperty {
     private String secret;
 
     @NotBlank
-    private String url;
+    private String sttUrl;
+
+    @NotBlank
+    private String ttsUrl;
 }

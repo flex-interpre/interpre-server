@@ -60,7 +60,7 @@ public class InterviewService {
 
         try {
             ClovaSttResponse response = webClient.post()
-                    .uri(clovaProperty.getUrl() + "?lang=Kor")
+                    .uri(clovaProperty.getSttUrl() + "?lang=Kor")
                     .header("X-NCP-APIGW-API-KEY-ID", clovaProperty.getId())
                     .header("X-NCP-APIGW-API-KEY", clovaProperty.getSecret())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
