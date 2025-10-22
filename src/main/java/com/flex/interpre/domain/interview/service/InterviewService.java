@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
@@ -139,6 +140,36 @@ public class InterviewService {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             throw InterviewExceptions.Parsing_Failed.toException();
+        }
+    }
+
+    public byte[] tts(String text) {
+
+        try {
+            byte[] audioData = webClient.post()
+                    .uri(clovaProperty.getTtsUrl())
+                    .header("X-NCP-APIGW-API-KEY-ID", clovaProperty.getId())
+                    .header("X-NCP-APIGW-API-KEY", clovaProperty.getSecret())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(BodyInserters.fromFormData("speaker", "nara")
+                            .with("text", text)
+                            .with("volume", "0")
+                            .with("speed", "-1")
+                            .with("pitch", "1")
+                            .with("emotion", "2")
+                            .with("emotion-strength", "1")
+                            .with("format", "wav")
+                            .with("sampling-rate", "8000")
+                            .with("alpha", "0")
+                            .with("end-pitch", "0"))
+                    .retrieve()
+                    .bodyToMono(byte[].class)
+                    .timeout(Duration.ofSeconds(30))
+                    .block();
+
+            return audioData;
+        } catch (Exception e) {
+            throw InterviewExceptions.TTS_PROCESSING_FAILED.toException();
         }
     }
 }
