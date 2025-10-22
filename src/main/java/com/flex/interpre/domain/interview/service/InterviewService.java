@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
 import com.flex.interpre.domain.interview.entity.Interview;
+import com.flex.interpre.domain.interview.entity.InterviewChat;
 import com.flex.interpre.domain.interview.entity.InterviewSession;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewRepository;
@@ -25,6 +26,7 @@ import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -82,23 +84,52 @@ public class InterviewService {
         }
     }
 
-    public String generateStartQuestions(String document) {
+    public String generateQuestions(String document, List<InterviewChat> chatHistory) {
 
-        String content = """
-                    당신은 경험이 풍부한 면접관입니다.
+        String systemPrompt = """
+                당신은 경험이 풍부한 기술 면접관입니다.
                 
-                    지원자의 자소서:
-                    ---
-                    %s
-                    ---
+                지원자의 자기소개서:
+                ---
+                %s
+                ---
                 
-                    면접을 시작합니다. 지원자에게 간단한 인사말과 함께 자소서 내용을 바탕으로 한 첫 질문을 해주세요.
+                면접 규칙:
+                1. 자소서 내용을 바탕으로 질문하되, 대화 맥락을 고려하세요
+                2. 지원자의 답변 수준에 맞춰 질문의 난이도를 조절하세요
+                3. 한 번에 1개의 질문만 하세요
+                4. 답변이 불충분하면 후속 질문으로 깊이 파고드세요
+                5. 적절한 때에 다른 주제로 자연스럽게 전환하세요
                 
-                    예시 형식:
-                    "안녕하세요 홍길동님, 오늘 면접에 참여해 주셔서 감사합니다. 자소서에서 언급하신 프로젝트 경험에 대해 먼저 여쭤보고 싶은데요, ..."
-                
-                    위와 같이 인사 + 질문 1개만 작성해주세요.
+                첫 질문일 경우:
+                "안녕하세요 [이름]님, 오늘 면접에 참여해 주셔서 감사합니다. ..." 형식으로 인사와 함께 시작하세요.
                 """.formatted(document);
+
+        List<Map<String, Object>> messages = new ArrayList<>();
+
+        // 인터뷰 기록이 없는 경우 첫 질문
+        if (chatHistory.isEmpty()) {
+            messages.add(Map.of(
+                    "role", "user",
+                    "content", "면접을 시작합니다. 첫 질문을 해주세요."
+            ));
+        } else {
+            for (InterviewChat chat : chatHistory) {
+                // llm 질문 추가
+                messages.add(Map.of(
+                        "role", "assistant",
+                        "content", chat.getQuestion()
+                ));
+
+                // 유저 답변 추가
+                if (chat.getAnswer() != null && !chat.getAnswer().isBlank()) {
+                    messages.add(Map.of(
+                            "role", "user",
+                            "content", chat.getAnswer()
+                    ));
+                }
+            }
+        }
 
         Map<String, Object> payloadMap = Map.of(
                 "anthropic_version", "bedrock-2023-05-31",
@@ -106,12 +137,8 @@ public class InterviewService {
                 "temperature", 0.7,
                 "top_p", 0.9,
                 "top_k", 50,
-                "messages", List.of(
-                        Map.of(
-                                "role", "user",
-                                "content", content
-                        )
-                )
+                "system", systemPrompt,
+                "messages", messages
         );
 
 
