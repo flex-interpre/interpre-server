@@ -22,6 +22,8 @@ public class InterviewSession {
 
     private UUID interviewId;
 
+    private String contentText;
+
     @TimeToLive(unit = TimeUnit.HOURS)
     long ttl;
 }

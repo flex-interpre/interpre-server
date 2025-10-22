@@ -2,6 +2,7 @@ package com.flex.interpre.domain.interview.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
 import com.flex.interpre.domain.interview.entity.Interview;
@@ -44,7 +45,7 @@ public class InterviewService {
 
 
     @Transactional
-    public SessionResponse getSessionResponse(User user) {
+    public SessionResponse getSessionResponse(User user, Document document) {
 
         Interview interview = interviewRepository.save(Interview.builder()
                 .jobSeeker(user.getJobSeeker())
@@ -53,6 +54,7 @@ public class InterviewService {
         InterviewSession interviewSession = interviewSessionRepository.save(InterviewSession.builder()
                 .userId(user.getId())
                 .interviewId(interview.getId())
+                .contentText(document.getContentText())
                 .ttl(1)
                 .build());
         return new SessionResponse(interviewSession.getId());
