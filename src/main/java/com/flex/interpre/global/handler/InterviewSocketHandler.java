@@ -2,11 +2,15 @@ package com.flex.interpre.global.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.interview.dto.response.InterviewResponse;
+import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.entity.InterviewChat;
 import com.flex.interpre.domain.interview.entity.InterviewSession;
+import com.flex.interpre.domain.interview.entity.Qna;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewChatRepository;
+import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
+import com.flex.interpre.domain.interview.repository.QnaRepository;
 import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
@@ -23,6 +27,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,6 +38,8 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewChatRepository interviewChatRepository;
+    private final QnaRepository qnaRepository;
+    private final InterviewRepository interviewRepository;
     private final InterviewService interviewService;
     private final ConcurrentHashMap<String, List<byte[]>> audioChunksMap = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
@@ -81,6 +89,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                     .question(firstQuestion)
                     .audio(audioBase64)
                     .questionNumber(1)
+                    .isFinal(false)
                     .build();
 
             sendResponse(session, ApiResponse.ok(interviewResponse));
@@ -271,6 +280,13 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         currentChat.setAnswer(transcription);
         interviewChatRepository.save(currentChat);
 
+        // 인터뷰 결과 10분 이상이면 종료
+        Long duration = checkInterviewEnd(interviewSession);
+        if (duration >= 10) {
+            finishInterview(session, sessionId, transcription, duration);
+            return;
+        }
+
         //채팅 기록 불러오기
         List<InterviewChat> chatHistory = interviewChatRepository
                 .findByInterviewIdOrderByQuestionNum(interviewId);
@@ -299,10 +315,58 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .question(nextQuestion)
                 .audio(audioBase64)
                 .questionNumber(currentQuestionNumber + 1)
+                .isFinal(false)
                 .build();
 
         sendResponse(session, ApiResponse.ok(response));
 
+
+    }
+
+    private Long checkInterviewEnd(InterviewSession interviewSession) {
+        LocalDateTime start = interviewSession.getStartedAt();
+
+        return Duration.between(start, LocalDateTime.now()).toMinutes();
+    }
+
+    private void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration) throws IOException {
+
+        InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
+                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
+
+        Interview interview = interviewRepository.findById(interviewSession.getInterviewId()).orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
+
+        List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(interviewSession.getInterviewId());
+
+        //Redis에 저장된 채팅 기록 Qna 객체로 변환
+        List<Qna> qnas = chatHistory.stream().map(chat -> Qna.from(chat, interview)).toList();
+        //전부 저장
+        qnaRepository.saveAll(qnas);
+
+        interview.setDurationSecond(duration);
+        interviewRepository.save(interview);
+
+        String closingMessage = String.format(
+                "수고하셨습니다. %d분간 총 %d개의 질문에 답변해 주셨습니다. 오늘 면접 참여해 주셔서 감사합니다.",
+                duration,
+                chatHistory.size()
+        );
+
+        byte[] audioData = interviewService.tts(closingMessage);
+        String audioBase64 = Base64.getEncoder().encodeToString(audioData);
+
+        InterviewResponse response = InterviewResponse.builder()
+                .transcription(lastTranscription)
+                .question(closingMessage)
+                .audio(audioBase64)
+                .questionNumber(interviewSession.getCurrentQuestionNum())
+                .isFinal(true)
+                .build();
+
+        sendResponse(session, ApiResponse.ok(response));
+
+        interviewChatRepository.deleteAll(chatHistory);
+        interviewSessionRepository.delete(interviewSession);
 
     }
 }
