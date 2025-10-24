@@ -29,7 +29,7 @@ public class InterviewSession {
     private Integer currentQuestionNum = 0;
 
     @Builder.Default
-    private LocalDateTime startAt = LocalDateTime.now();
+    private LocalDateTime startedAt = LocalDateTime.now();
 
     @TimeToLive(unit = TimeUnit.HOURS)
     long ttl;
