@@ -89,23 +89,18 @@ public class InterviewService {
     public String generateQuestions(String document, List<InterviewChat> chatHistory) {
 
         String systemPrompt = """
-                당신은 경험이 풍부한 기술 면접관입니다.
-                
-                지원자의 자기소개서:
-                ---
-                %s
-                ---
+                당신은 기술 면접관입니다.
                 
                 면접 규칙:
                 1. 자소서 내용을 바탕으로 질문하되, 대화 맥락을 고려하세요
-                2. 지원자의 답변 수준에 맞춰 질문의 난이도를 조절하세요
-                3. 한 번에 1개의 질문만 하세요
+                2. 답변 수준에 맞춰 질문 난이도를 조절하세요
+                3. 반드시 한 번에 하나의 질문만 작성하세요. 절대로 두 개 이상의 질문을 한 응답에 포함하지 마세요.
                 4. 답변이 불충분하면 후속 질문으로 깊이 파고드세요
-                5. 적절한 때에 다른 주제로 자연스럽게 전환하세요
+                5. 적절한 때 다른 주제로 자연스럽게 전환하세요
+                6. 사용자의 대답을 다음 질문에서 그대로 따라 하는 건 지양하고 비슷한 질문은 최대한 피하세요
                 
-                첫 질문일 경우:
-                "안녕하세요 [이름]님, 오늘 면접에 참여해 주셔서 감사합니다. ..." 형식으로 인사와 함께 시작하세요.
-                """.formatted(document);
+                출력: 질문만 작성하고 다른 설명은 생략하세요.
+                """;
 
         List<Map<String, Object>> messages = new ArrayList<>();
 
@@ -113,32 +108,40 @@ public class InterviewService {
         if (chatHistory.isEmpty()) {
             messages.add(Map.of(
                     "role", "user",
-                    "content", "면접을 시작합니다. 첫 질문을 해주세요."
+                    "content", """
+                            면접을 시작합니다. 다음 자기소개서를 읽고 첫 질문을 해주세요.
+                            
+                            [자기소개서]
+                            %s
+                            
+                            첫 질문은 자기소개를 요청하는 질문으로 시작하세요.
+                            """.formatted(document)
             ));
         } else {
+            // 히스토리 추가
             for (InterviewChat chat : chatHistory) {
-                // llm 질문 추가
-                messages.add(Map.of(
-                        "role", "assistant",
-                        "content", chat.getQuestion()
-                ));
+                messages.add(Map.of("role", "assistant", "content", chat.getQuestion()));
 
-                // 유저 답변 추가
                 if (chat.getAnswer() != null && !chat.getAnswer().isBlank()) {
-                    messages.add(Map.of(
-                            "role", "user",
-                            "content", chat.getAnswer()
-                    ));
+                    messages.add(Map.of("role", "user", "content", chat.getAnswer()));
                 }
             }
+
+            messages.add(Map.of(
+                    "role", "user",
+                    "content", """
+                            이전 대화를 바탕으로 다음 질문을 해주세요.
+                            
+                            [자기소개서]
+                            %s
+                            """.formatted(document)
+            ));
         }
 
         Map<String, Object> payloadMap = Map.of(
                 "anthropic_version", "bedrock-2023-05-31",
-                "max_tokens", 800,
+                "max_tokens", 400,
                 "temperature", 0.7,
-                "top_p", 0.9,
-                "top_k", 50,
                 "system", systemPrompt,
                 "messages", messages
         );
@@ -167,7 +170,6 @@ public class InterviewService {
                     .asText();
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             throw InterviewExceptions.Parsing_Failed.toException();
         }
     }
