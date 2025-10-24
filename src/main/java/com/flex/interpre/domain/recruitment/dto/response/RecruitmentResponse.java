@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.recruitment.dto.response;
 
+import com.flex.interpre.domain.company.dto.CompanySummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.*;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobSecond;

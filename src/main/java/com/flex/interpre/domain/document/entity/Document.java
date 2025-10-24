@@ -2,13 +2,13 @@ package com.flex.interpre.domain.document.entity;
 
 import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
 import com.flex.interpre.domain.user.entity.JobSeeker;
-import com.flex.interpre.global.config.VectorConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -51,14 +51,13 @@ public class Document {
     @Column(columnDefinition = "text", nullable = false)
     private String contentText;
 
-    @Convert(converter = VectorConverter.class)
     @Column(name = "document_vector", columnDefinition = "vector(1024)")
-    private float[] documentVector;
+    private List<Double> documentVector;
 
     /* 메서드 */
 
     public static Document create(JobSeeker jobSeeker, DocumentUploadRequest request,
-                                  String fileUrl, String extractedText, float[] embedding ){
+                                  String fileUrl, String extractedText, List<Double> embedding ){
         return Document.builder()
                 .jobSeeker(jobSeeker)
                 .documentType(request.documentType())

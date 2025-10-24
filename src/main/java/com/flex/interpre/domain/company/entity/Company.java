@@ -1,9 +1,13 @@
-package com.flex.interpre.domain.user.entity;
+package com.flex.interpre.domain.company.entity;
 
+import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.user.dto.request.UpdateMyCompanyInfo;
+import com.flex.interpre.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -41,6 +45,10 @@ public class Company {
 
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Recruitment> recruitments = new HashSet<>();
 
 
     // 기업 정보 수정 메서드
