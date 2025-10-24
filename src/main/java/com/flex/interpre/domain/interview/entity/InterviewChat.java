@@ -2,7 +2,7 @@ package com.flex.interpre.domain.interview.entity;
 
 import jakarta.persistence.Id;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.index.Indexed;
@@ -10,7 +10,7 @@ import org.springframework.data.redis.core.index.Indexed;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-@Getter
+@Data
 @Builder
 @RedisHash(value = "interview_chat")
 public class InterviewChat {
