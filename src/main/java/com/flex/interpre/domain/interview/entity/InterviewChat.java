@@ -22,6 +22,9 @@ public class InterviewChat {
     @Indexed
     private UUID interviewId;
 
+    @Indexed
+    private Integer questionNum;
+
     private String question;
 
     private String answer;
