@@ -62,7 +62,15 @@ public class RecruitmentService {
     @Transactional
     @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
     public RecruitmentResponse updateRecruitment(Recruitment recruitment, RecruitmentCreateUpdateRequest request) {
-        recruitment.update(request); // 공고문 업데이트
+        recruitment.update(request); // 공고문 데이터 업데이트
+
+        // 인덱싱/임베딩 갱신
+        try {
+            recruitmentIndexService.indexRecruitment(recruitment);
+            log.info("공고 인덱스 갱신 완료: {}", recruitment.getId());
+        } catch (Exception e) {
+            log.error("공고 인덱스 갱신 실패 ({}): {}", recruitment.getId(), e.getMessage());
+        }
 
         return RecruitmentResponse.from(recruitment);
     }
@@ -71,7 +79,13 @@ public class RecruitmentService {
     @Transactional
     @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
     public void deleteRecruitment(Recruitment recruitment) {
+        recruitmentRepository.delete(recruitment); // DB에서 삭제
 
-        recruitmentRepository.delete(recruitment);
+        try {
+            recruitmentIndexService.deleteRecruitment(recruitment.getId());
+            log.info("공고 인덱스 문서 삭제 완료: {}", recruitment.getId());
+        } catch (Exception e) {
+            log.error("공고 인덱스 문서 삭제 실패 ({}): {}", recruitment.getId(), e.getMessage());
+        }
     }
 }
