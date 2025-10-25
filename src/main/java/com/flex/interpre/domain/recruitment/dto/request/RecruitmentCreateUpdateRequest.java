@@ -1,10 +1,6 @@
 package com.flex.interpre.domain.recruitment.dto.request;
 
-import com.flex.interpre.domain.recruitment.entity.*;
-import com.flex.interpre.global.constant.Area;
-import com.flex.interpre.global.constant.JobSecond;
-import com.flex.interpre.global.constant.JobFirst;
-import com.flex.interpre.global.constant.JobThird;
+import com.flex.interpre.global.constant.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
