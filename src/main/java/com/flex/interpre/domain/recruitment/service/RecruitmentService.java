@@ -83,7 +83,9 @@ public class RecruitmentService {
         }
 
         // 정렬 기준 지정
-        Sort sort = switch (request.sort()) {
+        String sortType = request.sort() == null ? "recent" : request.sort(); // null 방지
+
+        Sort sort = switch (sortType) {
             case "popular" -> Sort.by(Sort.Direction.DESC, "viewCount");
             case "deadline" -> Sort.by(Sort.Direction.ASC, "deadline");
             default -> Sort.by(Sort.Direction.DESC, "createdAt"); // 최신순
