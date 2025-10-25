@@ -1,8 +1,10 @@
 package com.flex.interpre.domain.interview.controller;
 
 import com.flex.interpre.domain.document.entity.Document;
+import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
 import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
+import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
@@ -36,5 +38,12 @@ public class InterviewController {
     public ApiResponse<List<InterviewHistory>> getInterviewHistories(@AuthenticationPrincipal User user) {
 
         return ApiResponse.ok(interviewService.getInterviewHistories(user));
+    }
+
+    @GetMapping("/{interview}")
+    @Operation(summary = "면접 기록 상세 조회")
+    public ApiResponse<InterviewDetailResponse> getInterviewHistoryDetail(@PathVariable Interview interview) {
+
+        return ApiResponse.ok(interviewService.getInterviewHistoryDetail(interview));
     }
 }

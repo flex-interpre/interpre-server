@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
+import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
 import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
 import com.flex.interpre.domain.interview.entity.Interview;
@@ -205,6 +206,17 @@ public class InterviewService {
 
         List<Interview> interviews = user.getJobSeeker().getInterviews();
         return interviews.stream().map(InterviewHistory::from).toList();
+    }
+
+    public InterviewDetailResponse getInterviewHistoryDetail(Interview interview) {
+
+        return InterviewDetailResponse.builder()
+                .id(interview.getId())
+                .createdAt(interview.getCreatedAt())
+                .title(interview.getTitle())
+                .durationSeconds(interview.getDurationSecond())
+                .qna(interview.getQnas())
+                .build();
     }
 }
 
