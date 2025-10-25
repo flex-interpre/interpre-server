@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.user.entity;
 
+import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
 import com.flex.interpre.global.constant.Area;
@@ -65,6 +66,10 @@ public class JobSeeker {
     @Column(name = "job_third")
     @Builder.Default
     private Set<JobThird> jobThirds = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
+    private Set<Document> documents = new HashSet<>();
 
 
     // 구직자 정보 수정 메서드

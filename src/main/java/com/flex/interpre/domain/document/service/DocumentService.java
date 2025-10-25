@@ -50,7 +50,7 @@ public class DocumentService {
         JobSeeker jobSeeker = user.getJobSeeker();
         if (jobSeeker == null) return List.of();
 
-        return documentRepository.findAllByJobSeekerIdAndDeletedAtIsNull(jobSeeker.getUser().getId()).stream()
+        return documentRepository.findAllByJobSeekerUserIdAndDeletedAtIsNull(jobSeeker.getUser().getId()).stream()
                 .map(DocumentResponse::from)
                 .toList();
     }
