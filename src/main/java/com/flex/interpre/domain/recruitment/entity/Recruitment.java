@@ -2,6 +2,7 @@ package com.flex.interpre.domain.recruitment.entity;
 
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.company.entity.Company;
+import com.flex.interpre.domain.recruitment.dto.request.RecruitmentImportRequest;
 import com.flex.interpre.global.constant.*;
 import jakarta.persistence.*;
 import lombok.*;
@@ -172,4 +173,29 @@ public class Recruitment {
         this.benefits = request.benefits();
         this.skills = request.skills();
     }
+
+    // 공고문 임포트용 메서드
+    public static Recruitment createFromImport(RecruitmentImportRequest request, Company company) {
+        return Recruitment.builder()
+                .company(company)
+                .title(request.title())
+                .description(request.description())
+                .deadline(request.deadline())
+                .jobAreas(request.jobAreas())
+                .location(request.location())
+                .jobFirsts(request.jobFirsts())
+                .jobSeconds(request.jobSeconds())
+                .jobThirds(request.jobThirds())
+                .employmentTypes(request.employmentTypes())
+                .minExperience(request.minExperience())
+                .maxExperience(request.maxExperience())
+                .requirements(request.requirements())
+                .benefits(request.benefits())
+                .skills(request.skills())
+                .active(true)
+                .viewCount(0)
+                .build();
+    }
+
+
 }
