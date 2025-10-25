@@ -9,20 +9,19 @@ import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import com.flex.interpre.domain.user.repository.UserRepository;
 import com.flex.interpre.global.property.UrlProperty;
 import com.flex.interpre.global.security.jwt.JwtUtil;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -36,7 +35,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final JobSeekerRepository jobSeekerRepository;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
@@ -63,13 +63,12 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             return;
         }
 
-
         String accessToken = jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        setCookie(accessToken, refreshToken, firstLogin, response);
+        String redirectUrl = buildRedirectUrl(callBackUrl, accessToken, refreshToken, firstLogin);
 
-        response.sendRedirect(callBackUrl);
+        response.sendRedirect(redirectUrl);
 
 
     }
@@ -102,23 +101,20 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         return user;
     }
 
-    private void setCookie(String accessToken, String refreshToken, boolean firstLogin, HttpServletResponse response) {
+    private String buildRedirectUrl(String baseUrl, String accessToken, String refreshToken, boolean firstLogin) {
+        StringBuilder url = new StringBuilder(baseUrl);
 
-        addTokenCookie(response, "accessToken", accessToken);
-        addTokenCookie(response, "refreshToken", refreshToken);
-        addTokenCookie(response, "firstLogin", String.valueOf(firstLogin));
+        // 이미 쿼리 파라미터가 있는지 확인
+        String separator = baseUrl.contains("?") ? "&" : "?";
+
+        url.append(separator)
+                .append("accessToken=").append(URLEncoder.encode(accessToken, StandardCharsets.UTF_8))
+                .append("&refreshToken=").append(URLEncoder.encode(refreshToken, StandardCharsets.UTF_8))
+                .append("&firstLogin=").append(firstLogin);
+
+        return url.toString();
     }
 
-    private void addTokenCookie(HttpServletResponse response, String name, String value) {
-
-        Cookie cookie = new Cookie(name, value);
-        cookie.setPath("/");
-        cookie.setHttpOnly(false);
-        cookie.setSecure(false);
-        cookie.setMaxAge(300); // 짧게 5분
-
-        response.addCookie(cookie);
-    }
 
     private String extractRoleFromState(String state) {
         if (state == null) {
@@ -142,7 +138,9 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     }
 
     private String extractCallBackFromState(String state) {
-        if (state == null) return null;
+        if (state == null) {
+            return null;
+        }
         try {
             String decodedState = URLDecoder.decode(state, StandardCharsets.UTF_8);
             if (decodedState.contains("|callback:")) {
@@ -157,7 +155,9 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     }
 
     private boolean isAllowedUrl(String callBackUrl) {
-        if (callBackUrl == null || urlProperty.getAllowedUrls() == null) return false;
+        if (callBackUrl == null || urlProperty.getAllowedUrls() == null) {
+            return false;
+        }
         return urlProperty.getAllowedUrls().contains(callBackUrl);
     }
 }
