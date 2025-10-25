@@ -2,6 +2,7 @@ package com.flex.interpre.domain.recruitment.controller;
 
 
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
+import com.flex.interpre.domain.recruitment.dto.request.RecruitmentSearchRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
@@ -11,6 +12,7 @@ import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -35,6 +37,12 @@ public class RecruitmentController {
     @GetMapping
     public ApiResponse<Page<RecruitmentSummaryResponse>> getAllRecruitments(@PageableDefault(size = 30, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponse.ok(recruitmentService.getAllRecruitments(pageable));
+    }
+
+    @Operation(summary = "공고문 목록 조회 (검색 + 필터 + 정렬)")
+    @GetMapping("/search")
+    public ApiResponse<Page<RecruitmentSummaryResponse>> searchRecruitments(@ParameterObject @Valid RecruitmentSearchRequest request) {
+        return ApiResponse.ok(recruitmentService.searchRecruitments(request));
     }
 
     @Operation(summary = "공고문 상세 조회")

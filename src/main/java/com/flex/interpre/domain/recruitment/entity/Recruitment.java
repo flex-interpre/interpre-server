@@ -2,6 +2,7 @@ package com.flex.interpre.domain.recruitment.entity;
 
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.company.entity.Company;
+import com.flex.interpre.domain.recruitment.dto.request.RecruitmentImportRequest;
 import com.flex.interpre.global.constant.*;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @NamedEntityGraph(
@@ -171,5 +174,43 @@ public class Recruitment {
         this.requirements = request.requirements();
         this.benefits = request.benefits();
         this.skills = request.skills();
+    }
+
+    // 공고문 임포트용 메서드
+    public static Recruitment createFromImport(RecruitmentImportRequest request, Company company) {
+        return Recruitment.builder()
+                .company(company)
+                .title(request.title())
+                .description(request.description())
+                .deadline(request.deadline())
+                .jobAreas(safeEnumSet(request.jobAreas(), Area.class))
+                .location(request.location())
+                .jobFirsts(safeEnumSet(request.jobFirsts(), JobFirst.class))
+                .jobSeconds(safeEnumSet(request.jobSeconds(), JobSecond.class))
+                .jobThirds(safeEnumSet(request.jobThirds(), JobThird.class))
+                .employmentTypes(safeEnumSet(request.employmentTypes(), EmploymentType.class))
+                .minExperience(request.minExperience())
+                .maxExperience(request.maxExperience())
+                .requirements(request.requirements())
+                .benefits(request.benefits())
+                .skills(request.skills())
+                .active(true)
+                .viewCount(0)
+                .build();
+    }
+
+
+    private static <E extends Enum<E>> Set<E> safeEnumSet(Set<String> values, Class<E> enumClass) {
+        if (values == null) return new HashSet<>();
+
+        return values.stream()
+                .flatMap(v -> {
+                    try {
+                        return Stream.of(Enum.valueOf(enumClass, v));
+                    } catch (IllegalArgumentException e) {
+                        return Stream.empty();
+                    }
+                })
+                .collect(Collectors.toSet());
     }
 }

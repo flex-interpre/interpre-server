@@ -2,11 +2,13 @@ package com.flex.interpre.domain.recruitment.service;
 
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.index.RecruitmentDocumentIndex;
+import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.query_dsl.KnnQuery;
@@ -15,6 +17,13 @@ import org.opensearch.client.opensearch.core.IndexResponse;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -29,26 +38,29 @@ public class RecruitmentIndexService {
     // 공고문 인덱싱
     public void indexRecruitment(Recruitment recruitment) throws IOException {
         String textToEmbed = buildFullText(recruitment); // 공고문 전체 텍스트 구성
-        List<Double> embedding = clovaEmbeddingService.embed(textToEmbed); // 임베딩 생성
+//        List<Double> embedding = clovaEmbeddingService.embed(textToEmbed); // 임베딩 생성
 
         // 인덱스 문서 구성
         RecruitmentDocumentIndex doc = RecruitmentDocumentIndex.builder()
                 .id(recruitment.getId())
+                .company(RecruitmentDocumentIndex.CompanyInfo.builder()
+                        .id(recruitment.getCompany().getUser().getId())
+                        .companyName(recruitment.getCompany().getCompanyName())
+                        .build())
                 .title(recruitment.getTitle())
                 .description(recruitment.getDescription())
-                .companyName(recruitment.getCompany().getCompanyName())
                 .location(recruitment.getLocation())
                 .jobAreas(recruitment.getJobAreas().stream().map(Enum::name).toList())
                 .jobFirsts(recruitment.getJobFirsts().stream().map(Enum::name).toList())
                 .jobSeconds(recruitment.getJobSeconds().stream().map(Enum::name).toList())
                 .jobThirds(recruitment.getJobThirds().stream().map(Enum::name).toList())
                 .employmentTypes(recruitment.getEmploymentTypes().stream().map(Enum::name).toList())
-                .requirements(recruitment.getRequirements() != null ? recruitment.getRequirements().stream().toList()
-                        : List.of())
-                .benefits(recruitment.getBenefits() != null ? recruitment.getBenefits().stream().toList() : List.of())
-                .skills(recruitment.getSkills() != null ? recruitment.getSkills().stream().toList() : List.of())
-                .embedding(embedding)
+                .requirements(recruitment.getRequirements().stream().toList())
+                .benefits(recruitment.getBenefits().stream().toList())
+                .skills(recruitment.getSkills().stream().toList())
+                .embedding(clovaEmbeddingService.embed(buildFullText(recruitment)))
                 .build();
+
 
         // OpenSearch 인덱싱
         IndexResponse response = client.index(i -> i
@@ -62,7 +74,6 @@ public class RecruitmentIndexService {
 
     // 인덱스 문서 삭제
     public void deleteRecruitment(UUID recruitmentId) {
-
         try {
             client.delete(d -> d.index(INDEX_NAME).id(recruitmentId.toString()));
             log.info(" 인덱스 문서 삭제 [{}]", recruitmentId);
@@ -100,6 +111,38 @@ public class RecruitmentIndexService {
                 .map(Hit::source)
                 .toList();
     }
+
+
+    @SneakyThrows
+    public List<UUID> searchIdsByKeyword(String keyword, String excludeKeyword, Set<String> fields){
+        if (keyword == null || keyword.isBlank()) return List.of();
+
+        Set<String> searchFields = (fields == null || fields.isEmpty())
+                ? Set.of("title", "description", "companyName", "skills")
+                : fields;
+
+        final String exclude = excludeKeyword;
+
+        var boolQuery = new Query.Builder().bool(b -> {
+            b.must(m -> m.multiMatch(mm -> mm.fields(fields.stream().toList()).query(keyword)));
+            if (excludeKeyword != null && !excludeKeyword.isBlank()) {
+                b.mustNot(m -> m.multiMatch(mm -> mm.fields(fields.stream().toList()).query(excludeKeyword)));
+            }
+            return b;
+        }).build();
+
+        SearchResponse<RecruitmentDocumentIndex> response = client.search(s -> s
+                        .index(INDEX_NAME)
+                        .size(200)
+                        .query(boolQuery),
+                RecruitmentDocumentIndex.class
+        );
+
+        return response.hits().hits().stream()
+                .map(hit -> UUID.fromString(hit.source().getId().toString()))
+                .toList();
+    }
+
 
     // 공고문 전체 텍스트 생성 (임베딩용)
     private String buildFullText(Recruitment recruitment) {
