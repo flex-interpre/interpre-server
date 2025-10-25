@@ -19,7 +19,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -354,6 +356,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         // 인터뷰 기록 인베딩
         List<Double> embedding = clovaEmbeddingService.embed(fullTranscript);
         interview.setEmbedding(embedding);
+        interview.setTitle(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")) + " 면접 기록");
 
         //전부 저장
         qnaRepository.saveAll(qnas);
