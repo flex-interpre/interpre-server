@@ -63,6 +63,7 @@ public class RecruitmentIndexService {
 
     // 인덱스 문서 삭제
     public void deleteRecruitment(UUID recruitmentId) {
+
         try {
             client.delete(d -> d.index(INDEX_NAME).id(recruitmentId.toString()));
             log.info(" 인덱스 문서 삭제 [{}]", recruitmentId);
