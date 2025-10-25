@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
+import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
+import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.entity.InterviewChat;
@@ -14,6 +16,11 @@ import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.property.BedrockProperty;
 import com.flex.interpre.global.property.ClovaProperty;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -24,12 +31,6 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
-
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -62,7 +63,6 @@ public class InterviewService {
 
     public String transcribe(byte[] audioData) {
 
-
         try {
             ClovaSttResponse response = webClient.post()
                     .uri(clovaProperty.getSttUrl() + "?lang=Kor")
@@ -74,7 +74,6 @@ public class InterviewService {
                     .bodyToMono(ClovaSttResponse.class)
                     .timeout(Duration.ofSeconds(30))
                     .block();
-
 
             if (response == null || response.text() == null || response.text().isEmpty()) {
                 throw InterviewExceptions.STT_NO_RESULT.toException();
@@ -146,7 +145,6 @@ public class InterviewService {
                 "messages", messages
         );
 
-
         try {
 
             String payload = objectMapper.writeValueAsString(payloadMap);
@@ -202,6 +200,37 @@ public class InterviewService {
         } catch (Exception e) {
             throw InterviewExceptions.TTS_PROCESSING_FAILED.toException();
         }
+    }
+
+    public List<InterviewHistory> getInterviewHistories(User user) {
+
+        List<Interview> interviews = user.getJobSeeker().getInterviews();
+        return interviews.stream().map(InterviewHistory::from).toList();
+    }
+
+    public InterviewDetailResponse getInterviewHistoryDetail(Interview interview) {
+
+        return InterviewDetailResponse.builder()
+                .id(interview.getId())
+                .createdAt(interview.getCreatedAt())
+                .title(interview.getTitle())
+                .durationSeconds(interview.getDurationSecond())
+                .qna(interview.getQnas())
+                .build();
+    }
+
+    public InterviewDetailResponse updateInterviewTitle(Interview interview, String title) {
+
+        interview.setTitle(title);
+        Interview updatedInterview = interviewRepository.save(interview);
+
+        return InterviewDetailResponse.builder()
+                .id(updatedInterview.getId())
+                .createdAt(updatedInterview.getCreatedAt())
+                .title(updatedInterview.getTitle())
+                .durationSeconds(updatedInterview.getDurationSecond())
+                .qna(updatedInterview.getQnas())
+                .build();
     }
 }
 
