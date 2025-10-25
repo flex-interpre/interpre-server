@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.recruitment.entity;
+package com.flex.interpre.global.constant;
 
 public enum EmploymentType {
     FULL_TIME,

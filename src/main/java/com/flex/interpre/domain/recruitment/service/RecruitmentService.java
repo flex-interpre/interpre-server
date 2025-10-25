@@ -7,20 +7,22 @@ import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.company.entity.Company;
 import com.flex.interpre.domain.user.entity.User;
-import com.flex.interpre.domain.user.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RecruitmentService {
     private final RecruitmentRepository recruitmentRepository;
-    private final CompanyRepository companyRepository;
+    private final RecruitmentIndexService recruitmentIndexService;
 
     // 공고문 생성
     @Transactional
@@ -29,7 +31,14 @@ public class RecruitmentService {
         Company company = user.getCompany(); // 유저로부터 해당 기업 조회
 
         Recruitment recruitment = Recruitment.create(request, company); // 공고문 생성
-        recruitmentRepository.save(recruitment);
+        recruitmentRepository.save(recruitment); // DB 저장
+
+        try { // 공고문 인덱싱
+            recruitmentIndexService.indexRecruitment(recruitment);
+            log.info("공고 인덱싱 완료: {}", recruitment.getId());
+        } catch (Exception e) {
+            log.error("공고 인덱싱 실패 ({}): {}", recruitment.getId(), e.getMessage());
+        }
 
         return RecruitmentResponse.from(recruitment);
     }
