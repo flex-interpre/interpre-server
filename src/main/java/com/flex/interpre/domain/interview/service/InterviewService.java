@@ -15,7 +15,9 @@ import com.flex.interpre.domain.interview.entity.InterviewSession;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
+import com.flex.interpre.domain.user.entity.JobSeeker;
 import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import com.flex.interpre.global.property.BedrockProperty;
 import com.flex.interpre.global.property.ClovaProperty;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +45,7 @@ public class InterviewService {
 
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewRepository interviewRepository;
+    private final JobSeekerRepository jobSeekerRepository;
     private final ClovaProperty clovaProperty;
     private final WebClient webClient;
     private final BedrockRuntimeClient bedrockRuntimeClient;
@@ -210,7 +213,8 @@ public class InterviewService {
     @Transactional
     public List<InterviewHistory> getInterviewHistories(User user) {
 
-        List<Interview> interviews = user.getJobSeeker().getInterviews();
+        JobSeeker jobSeeker = jobSeekerRepository.findByUserIdWithInterviews((user.getId()));
+        List<Interview> interviews = jobSeeker.getInterviews();
         return interviews.stream().map(InterviewHistory::from).toList();
     }
 
