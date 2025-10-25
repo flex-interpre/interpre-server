@@ -199,6 +199,7 @@ public class Recruitment {
                 .build();
     }
 
+
     private static <E extends Enum<E>> Set<E> safeEnumSet(Set<String> values, Class<E> enumClass) {
         if (values == null) return new HashSet<>();
 

@@ -25,4 +25,3 @@ public record RecruitmentImportRequest(
         Set<String> benefits,
         Set<String> skills
 ) {}
-
