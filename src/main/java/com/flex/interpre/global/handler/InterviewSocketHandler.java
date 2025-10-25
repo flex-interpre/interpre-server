@@ -1,9 +1,11 @@
 package com.flex.interpre.global.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
 import com.flex.interpre.domain.interview.dto.response.InterviewResponse;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.entity.InterviewChat;
+import com.flex.interpre.domain.interview.entity.InterviewReport;
 import com.flex.interpre.domain.interview.entity.InterviewSession;
 import com.flex.interpre.domain.interview.entity.Qna;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
@@ -12,6 +14,8 @@ import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.interview.repository.QnaRepository;
 import com.flex.interpre.domain.interview.service.InterviewService;
+import com.flex.interpre.domain.recruitment.entity.Recruitment;
+import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
@@ -51,6 +55,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final InterviewService interviewService;
     private final ConcurrentHashMap<String, List<byte[]>> audioChunksMap = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
+    private final RecruitmentIndexService recruitmentIndexService;
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
@@ -94,6 +99,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                     .question(firstQuestion)
                     .audio(audioBase64)
                     .questionNumber(1)
+                    .interviewReport(null)
                     .isFinal(false)
                     .build();
 
@@ -320,6 +326,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .question(nextQuestion)
                 .audio(audioBase64)
                 .questionNumber(currentQuestionNumber + 1)
+                .interviewReport(null)
                 .isFinal(false)
                 .build();
 
@@ -358,6 +365,21 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         interview.setEmbedding(embedding);
         interview.setTitle(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")) + " 면접 기록");
 
+        //면접 분석
+        InterviewAnalysisResult analysisResult = interviewService.analyzeInterview(fullTranscript);
+        List<Recruitment> recommendations = recruitmentIndexService.searchByVector(embedding, 3);
+
+        InterviewReport interviewReport = InterviewReport.builder()
+                .interview(interview)
+                .aiFeedback(analysisResult.aiFeedback())
+                .strengths(analysisResult.strengths())
+                .weaknesses(analysisResult.weaknesses())
+                .competencyScores(analysisResult.competencyScores())
+                .recommendations(recommendations)
+                .build();
+
+        interview.setInterviewReport(interviewReport);
+
         //전부 저장
         qnaRepository.saveAll(qnas);
 
@@ -378,6 +400,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .question(closingMessage)
                 .audio(audioBase64)
                 .questionNumber(interviewSession.getCurrentQuestionNum())
+                .interviewReport(interviewReport)
                 .isFinal(true)
                 .build();
 
