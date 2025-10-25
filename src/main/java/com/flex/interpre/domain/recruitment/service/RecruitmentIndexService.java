@@ -5,6 +5,7 @@ import com.flex.interpre.domain.recruitment.index.RecruitmentDocumentIndex;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.core.IndexResponse;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -69,7 +71,6 @@ public class RecruitmentIndexService {
 
     // 인덱스 문서 삭제
     public void deleteRecruitment(UUID recruitmentId) {
-
         try {
             client.delete(d -> d.index(INDEX_NAME).id(recruitmentId.toString()));
             log.info(" 인덱스 문서 삭제 [{}]", recruitmentId);
@@ -104,6 +105,38 @@ public class RecruitmentIndexService {
                 .map(Hit::source)
                 .toList();
     }
+
+
+    @SneakyThrows
+    public List<UUID> searchIdsByKeyword(String keyword, String excludeKeyword, Set<String> fields){
+        if (keyword == null || keyword.isBlank()) return List.of();
+
+        Set<String> searchFields = (fields == null || fields.isEmpty())
+                ? Set.of("title", "description", "companyName", "skills")
+                : fields;
+
+        final String exclude = excludeKeyword;
+
+        var boolQuery = new Query.Builder().bool(b -> {
+            b.must(m -> m.multiMatch(mm -> mm.fields(fields.stream().toList()).query(keyword)));
+            if (excludeKeyword != null && !excludeKeyword.isBlank()) {
+                b.mustNot(m -> m.multiMatch(mm -> mm.fields(fields.stream().toList()).query(excludeKeyword)));
+            }
+            return b;
+        }).build();
+
+        SearchResponse<RecruitmentDocumentIndex> response = client.search(s -> s
+                        .index(INDEX_NAME)
+                        .size(200)
+                        .query(boolQuery),
+                RecruitmentDocumentIndex.class
+        );
+
+        return response.hits().hits().stream()
+                .map(hit -> UUID.fromString(hit.source().getId().toString()))
+                .toList();
+    }
+
 
     // 공고문 전체 텍스트 생성 (임베딩용)
     private String buildFullText(Recruitment recruitment) {
