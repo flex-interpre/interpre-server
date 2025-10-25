@@ -57,9 +57,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 throw InterviewExceptions.ALREADY_STARTED_INTERVIEW.toException();
             }
 
-            //TODO: 추후 자소서 객체 변경하기
-            //String document = interviewSession.getContentText();
-            String document = "test";
+            String document = interviewSession.getContentText();
 
             audioChunksMap.put(session.getId(), new ArrayList<>());
 
