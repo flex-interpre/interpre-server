@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -95,6 +96,35 @@ public class RecruitmentIndexService {
 
         return response.hits().hits().stream()
                 .map(Hit::source)
+                .toList();
+    }
+
+    public List<UUID> searchIdsByKeyword(String keyword, String excludeKeyword, Set<String> fields) throws IOException {
+        if (keyword == null || keyword.isBlank()) return List.of();
+
+        Set<String> searchFields = (fields == null || fields.isEmpty())
+                ? Set.of("title", "description", "companyName", "skills")
+                : fields;
+
+        final String exclude = excludeKeyword;
+
+        var boolQuery = new Query.Builder().bool(b -> {
+            b.must(m -> m.multiMatch(mm -> mm.fields(fields.stream().toList()).query(keyword)));
+            if (excludeKeyword != null && !excludeKeyword.isBlank()) {
+                b.mustNot(m -> m.multiMatch(mm -> mm.fields(fields.stream().toList()).query(excludeKeyword)));
+            }
+            return b;
+        }).build();
+
+        SearchResponse<RecruitmentDocumentIndex> response = client.search(s -> s
+                        .index(INDEX_NAME)
+                        .size(200)
+                        .query(boolQuery),
+                RecruitmentDocumentIndex.class
+        );
+
+        return response.hits().hits().stream()
+                .map(hit -> UUID.fromString(hit.source().getId().toString()))
                 .toList();
     }
 
