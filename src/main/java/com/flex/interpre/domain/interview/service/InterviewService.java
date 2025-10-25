@@ -2,9 +2,11 @@ package com.flex.interpre.domain.interview.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
 import com.flex.interpre.domain.interview.entity.Interview;
+import com.flex.interpre.domain.interview.entity.InterviewChat;
 import com.flex.interpre.domain.interview.entity.InterviewSession;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewRepository;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
@@ -24,6 +27,7 @@ import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +45,7 @@ public class InterviewService {
 
 
     @Transactional
-    public SessionResponse getSessionResponse(User user) {
+    public SessionResponse getSessionResponse(User user, Document document) {
 
         Interview interview = interviewRepository.save(Interview.builder()
                 .jobSeeker(user.getJobSeeker())
@@ -50,6 +54,7 @@ public class InterviewService {
         InterviewSession interviewSession = interviewSessionRepository.save(InterviewSession.builder()
                 .userId(user.getId())
                 .interviewId(interview.getId())
+                .contentText(document.getContentText())
                 .ttl(1)
                 .build());
         return new SessionResponse(interviewSession.getId());
@@ -60,7 +65,7 @@ public class InterviewService {
 
         try {
             ClovaSttResponse response = webClient.post()
-                    .uri(clovaProperty.getUrl() + "?lang=Kor")
+                    .uri(clovaProperty.getSttUrl() + "?lang=Kor")
                     .header("X-NCP-APIGW-API-KEY-ID", clovaProperty.getId())
                     .header("X-NCP-APIGW-API-KEY", clovaProperty.getSecret())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -81,36 +86,64 @@ public class InterviewService {
         }
     }
 
-    public String generateStartQuestions(String document) {
+    public String generateQuestions(String document, List<InterviewChat> chatHistory) {
 
-        String content = """
-                    당신은 경험이 풍부한 면접관입니다.
+        String systemPrompt = """
+                당신은 기술 면접관입니다.
                 
-                    지원자의 자소서:
-                    ---
-                    %s
-                    ---
+                면접 규칙:
+                1. 자소서 내용을 바탕으로 질문하되, 대화 맥락을 고려하세요
+                2. 답변 수준에 맞춰 질문 난이도를 조절하세요
+                3. 반드시 한 번에 하나의 질문만 작성하세요. 절대로 두 개 이상의 질문을 한 응답에 포함하지 마세요.
+                4. 답변이 불충분하면 후속 질문으로 깊이 파고드세요
+                5. 적절한 때 다른 주제로 자연스럽게 전환하세요
+                6. 사용자의 대답을 다음 질문에서 그대로 따라 하는 건 지양하고 비슷한 질문은 최대한 피하세요
                 
-                    면접을 시작합니다. 지원자에게 간단한 인사말과 함께 자소서 내용을 바탕으로 한 첫 질문을 해주세요.
-                
-                    예시 형식:
-                    "안녕하세요 홍길동님, 오늘 면접에 참여해 주셔서 감사합니다. 자소서에서 언급하신 프로젝트 경험에 대해 먼저 여쭤보고 싶은데요, ..."
-                
-                    위와 같이 인사 + 질문 1개만 작성해주세요.
-                """.formatted(document);
+                출력: 질문만 작성하고 다른 설명은 생략하세요.
+                """;
+
+        List<Map<String, Object>> messages = new ArrayList<>();
+
+        // 인터뷰 기록이 없는 경우 첫 질문
+        if (chatHistory.isEmpty()) {
+            messages.add(Map.of(
+                    "role", "user",
+                    "content", """
+                            면접을 시작합니다. 다음 자기소개서를 읽고 첫 질문을 해주세요.
+                            
+                            [자기소개서]
+                            %s
+                            
+                            첫 질문은 자기소개를 요청하는 질문으로 시작하세요.
+                            """.formatted(document)
+            ));
+        } else {
+            // 히스토리 추가
+            for (InterviewChat chat : chatHistory) {
+                messages.add(Map.of("role", "assistant", "content", chat.getQuestion()));
+
+                if (chat.getAnswer() != null && !chat.getAnswer().isBlank()) {
+                    messages.add(Map.of("role", "user", "content", chat.getAnswer()));
+                }
+            }
+
+            messages.add(Map.of(
+                    "role", "user",
+                    "content", """
+                            이전 대화를 바탕으로 다음 질문을 해주세요.
+                            
+                            [자기소개서]
+                            %s
+                            """.formatted(document)
+            ));
+        }
 
         Map<String, Object> payloadMap = Map.of(
                 "anthropic_version", "bedrock-2023-05-31",
-                "max_tokens", 800,
+                "max_tokens", 400,
                 "temperature", 0.7,
-                "top_p", 0.9,
-                "top_k", 50,
-                "messages", List.of(
-                        Map.of(
-                                "role", "user",
-                                "content", content
-                        )
-                )
+                "system", systemPrompt,
+                "messages", messages
         );
 
 
@@ -137,8 +170,37 @@ public class InterviewService {
                     .asText();
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             throw InterviewExceptions.Parsing_Failed.toException();
+        }
+    }
+
+    public byte[] tts(String text) {
+
+        try {
+            byte[] audioData = webClient.post()
+                    .uri(clovaProperty.getTtsUrl())
+                    .header("X-NCP-APIGW-API-KEY-ID", clovaProperty.getId())
+                    .header("X-NCP-APIGW-API-KEY", clovaProperty.getSecret())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(BodyInserters.fromFormData("speaker", "nara")
+                            .with("text", text)
+                            .with("volume", "0")
+                            .with("speed", "-1")
+                            .with("pitch", "1")
+                            .with("emotion", "2")
+                            .with("emotion-strength", "1")
+                            .with("format", "wav")
+                            .with("sampling-rate", "8000")
+                            .with("alpha", "0")
+                            .with("end-pitch", "0"))
+                    .retrieve()
+                    .bodyToMono(byte[].class)
+                    .timeout(Duration.ofSeconds(30))
+                    .block();
+
+            return audioData;
+        } catch (Exception e) {
+            throw InterviewExceptions.TTS_PROCESSING_FAILED.toException();
         }
     }
 }

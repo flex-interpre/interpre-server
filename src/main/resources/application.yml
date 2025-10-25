@@ -64,13 +64,13 @@ app:
   clova:
     id: ${CLOAVA_CLIENT_ID}
     secret: ${CLOAVA_CLIENT_SECRET}
-    url: ${CLOVA_URL}
-      - http://localhost:3000
+    stt-url: ${CLOVA_STT_URL}
+    tts-url: ${CLOVA_TTS_URL}
   bedrock:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
     region: ${BUCKET_REGION}
-    model-id: anthropic.claude-3-5-sonnet-20240620-v1:0
+    model-id: arn:aws:bedrock:ap-northeast-2:663819385228:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0
 
 aws:
   credentials:

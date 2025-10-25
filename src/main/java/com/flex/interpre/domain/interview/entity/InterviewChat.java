@@ -5,32 +5,32 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
+import org.springframework.data.redis.core.index.Indexed;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Data
 @Builder
-@RedisHash(value = "interview_session")
-public class InterviewSession {
+@RedisHash(value = "interview_chat")
+public class InterviewChat {
 
     @Id
     @Builder.Default
     private UUID id = UUID.randomUUID();
 
-    private UUID userId;
-
+    @Indexed
     private UUID interviewId;
 
-    private String contentText;
+    @Indexed
+    private Integer questionNum;
 
+    private String question;
+
+    private String answer;
+
+    @TimeToLive(unit = TimeUnit.MINUTES)
     @Builder.Default
-    private Integer currentQuestionNum = 0;
+    private long ttl = 30;
 
-    @Builder.Default
-    private LocalDateTime startedAt = LocalDateTime.now();
-
-    @TimeToLive(unit = TimeUnit.HOURS)
-    long ttl;
 }
