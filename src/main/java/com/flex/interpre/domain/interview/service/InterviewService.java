@@ -207,12 +207,14 @@ public class InterviewService {
         }
     }
 
+    @Transactional
     public List<InterviewHistory> getInterviewHistories(User user) {
 
         List<Interview> interviews = user.getJobSeeker().getInterviews();
         return interviews.stream().map(InterviewHistory::from).toList();
     }
 
+    @Transactional
     public InterviewDetailResponse getInterviewHistoryDetail(Interview interview) {
 
         return InterviewDetailResponse.builder()
@@ -224,6 +226,7 @@ public class InterviewService {
                 .build();
     }
 
+    @Transactional
     public InterviewDetailResponse updateInterviewTitle(Interview interview, String title) {
 
         interview.setTitle(title);
@@ -238,6 +241,7 @@ public class InterviewService {
                 .build();
     }
 
+    @Transactional
     public InterviewAnalysisResult analyzeInterview(String fullTranscript) {
 
         String systemPrompt = """
