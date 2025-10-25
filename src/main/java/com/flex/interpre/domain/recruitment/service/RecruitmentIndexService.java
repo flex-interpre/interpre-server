@@ -4,6 +4,7 @@ import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.index.RecruitmentDocumentIndex;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.core.IndexResponse;
@@ -99,7 +100,8 @@ public class RecruitmentIndexService {
                 .toList();
     }
 
-    public List<UUID> searchIdsByKeyword(String keyword, String excludeKeyword, Set<String> fields) throws IOException {
+    @SneakyThrows
+    public List<UUID> searchIdsByKeyword(String keyword, String excludeKeyword, Set<String> fields){
         if (keyword == null || keyword.isBlank()) return List.of();
 
         Set<String> searchFields = (fields == null || fields.isEmpty())
