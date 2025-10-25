@@ -2,6 +2,7 @@ package com.flex.interpre.domain.recruitment.service;
 
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.index.RecruitmentDocumentIndex;
+import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -13,6 +14,7 @@ import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch._types.query_dsl.KnnQuery;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,25 +35,29 @@ public class RecruitmentIndexService {
     // 공고문 인덱싱
     public void indexRecruitment(Recruitment recruitment) throws IOException {
         String textToEmbed = buildFullText(recruitment); // 공고문 전체 텍스트 구성
-        List<Double> embedding = clovaEmbeddingService.embed(textToEmbed); // 임베딩 생성
+//        List<Double> embedding = clovaEmbeddingService.embed(textToEmbed); // 임베딩 생성
 
         // 인덱스 문서 구성
         RecruitmentDocumentIndex doc = RecruitmentDocumentIndex.builder()
                 .id(recruitment.getId())
+                .company(RecruitmentDocumentIndex.CompanyInfo.builder()
+                        .id(recruitment.getCompany().getUser().getId())
+                        .companyName(recruitment.getCompany().getCompanyName())
+                        .build())
                 .title(recruitment.getTitle())
                 .description(recruitment.getDescription())
-                .companyName(recruitment.getCompany().getCompanyName())
                 .location(recruitment.getLocation())
                 .jobAreas(recruitment.getJobAreas().stream().map(Enum::name).toList())
                 .jobFirsts(recruitment.getJobFirsts().stream().map(Enum::name).toList())
                 .jobSeconds(recruitment.getJobSeconds().stream().map(Enum::name).toList())
                 .jobThirds(recruitment.getJobThirds().stream().map(Enum::name).toList())
                 .employmentTypes(recruitment.getEmploymentTypes().stream().map(Enum::name).toList())
-                .requirements(recruitment.getRequirements() != null ? recruitment.getRequirements().stream().toList() : List.of())
-                .benefits(recruitment.getBenefits() != null ? recruitment.getBenefits().stream().toList() : List.of())
-                .skills(recruitment.getSkills() != null ? recruitment.getSkills().stream().toList() : List.of())
-                .embedding(embedding)
+                .requirements(recruitment.getRequirements().stream().toList())
+                .benefits(recruitment.getBenefits().stream().toList())
+                .skills(recruitment.getSkills().stream().toList())
+                .embedding(clovaEmbeddingService.embed(buildFullText(recruitment)))
                 .build();
+
 
         // OpenSearch 인덱싱
         IndexResponse response = client.index(i -> i

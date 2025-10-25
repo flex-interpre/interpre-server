@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @NamedEntityGraph(
@@ -181,12 +183,12 @@ public class Recruitment {
                 .title(request.title())
                 .description(request.description())
                 .deadline(request.deadline())
-                .jobAreas(request.jobAreas())
+                .jobAreas(safeEnumSet(request.jobAreas(), Area.class))
                 .location(request.location())
-                .jobFirsts(request.jobFirsts())
-                .jobSeconds(request.jobSeconds())
-                .jobThirds(request.jobThirds())
-                .employmentTypes(request.employmentTypes())
+                .jobFirsts(safeEnumSet(request.jobFirsts(), JobFirst.class))
+                .jobSeconds(safeEnumSet(request.jobSeconds(), JobSecond.class))
+                .jobThirds(safeEnumSet(request.jobThirds(), JobThird.class))
+                .employmentTypes(safeEnumSet(request.employmentTypes(), EmploymentType.class))
                 .minExperience(request.minExperience())
                 .maxExperience(request.maxExperience())
                 .requirements(request.requirements())
@@ -198,4 +200,17 @@ public class Recruitment {
     }
 
 
+    private static <E extends Enum<E>> Set<E> safeEnumSet(Set<String> values, Class<E> enumClass) {
+        if (values == null) return new HashSet<>();
+
+        return values.stream()
+                .flatMap(v -> {
+                    try {
+                        return Stream.of(Enum.valueOf(enumClass, v));
+                    } catch (IllegalArgumentException e) {
+                        return Stream.empty();
+                    }
+                })
+                .collect(Collectors.toSet());
+    }
 }
