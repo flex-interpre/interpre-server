@@ -2,6 +2,7 @@ package com.flex.interpre.domain.user.entity;
 
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
+import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
@@ -11,6 +12,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -67,6 +69,8 @@ public class JobSeeker {
     @Builder.Default
     private Set<JobThird> jobThirds = new HashSet<>();
 
+    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
+    List<Interview> interviews;
     @Builder.Default
     @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
     private Set<Document> documents = new HashSet<>();

@@ -21,7 +21,6 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -29,7 +28,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
-
   data:
     redis:
       host: ${REDIS_HOST}
@@ -71,6 +69,16 @@ app:
   oauth2:
     allowed-urls:
       - http://localhost:3000
+  clova:
+    id: ${CLOAVA_CLIENT_ID}
+    secret: ${CLOAVA_CLIENT_SECRET}
+    stt-url: ${CLOVA_STT_URL}
+    tts-url: ${CLOVA_TTS_URL}
+  bedrock:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    region: ${BUCKET_REGION}
+    model-id: arn:aws:bedrock:ap-northeast-2:663819385228:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0
 
 aws:
   credentials:

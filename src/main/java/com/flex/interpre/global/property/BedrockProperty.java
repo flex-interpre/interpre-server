@@ -5,13 +5,20 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Set;
-
 @Configuration
 @Data
-@ConfigurationProperties(prefix = "app.oauth2")
-public class UrlProperty {
+@ConfigurationProperties(prefix = "app.bedrock")
+public class BedrockProperty {
 
     @NotBlank
-    private Set<String> allowedUrls;
+    private String accessKey;
+
+    @NotBlank
+    private String secretKey;
+
+    @NotBlank
+    private String region;
+
+    @NotBlank
+    private String modelId;
 }

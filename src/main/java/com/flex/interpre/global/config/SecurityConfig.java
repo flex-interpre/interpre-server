@@ -1,7 +1,7 @@
 package com.flex.interpre.global.config;
 
-import com.flex.interpre.domain.auth.handler.CustomOAuth2SuccessHandler;
 import com.flex.interpre.domain.auth.service.CustomOAuth2UserService;
+import com.flex.interpre.global.handler.CustomOAuth2SuccessHandler;
 import com.flex.interpre.global.security.authentication.CustomAuthenticationEntryPoint;
 import com.flex.interpre.global.security.authentication.CustomOAuth2AuthorizationRequestResolver;
 import com.flex.interpre.global.security.jwt.JwtFilter;
@@ -28,19 +28,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        
+
         return http.cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth -> oauth
-                        .authorizationEndpoint(auth->auth
+                        .authorizationEndpoint(auth -> auth
                                 .baseUri("/api/oauth2/authorization")
                                 .authorizationRequestResolver(authorizationRequestResolver))
-                        .userInfoEndpoint(c->c.userService(customOAuth2UserService))
+                        .userInfoEndpoint(c -> c.userService(customOAuth2UserService))
                         .successHandler(customOAuth2SuccessHandler))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(request -> request.anyRequest().permitAll())
-                .exceptionHandling(e->e.authenticationEntryPoint(customAuthenticationEntryPoint))
+                .exceptionHandling(e -> e.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .build();
 
     }
