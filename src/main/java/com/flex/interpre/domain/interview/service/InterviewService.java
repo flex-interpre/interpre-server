@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
+import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
 import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
 import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
+import com.flex.interpre.domain.interview.entity.Competency;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.entity.InterviewChat;
 import com.flex.interpre.domain.interview.entity.InterviewSession;
@@ -19,9 +21,11 @@ import com.flex.interpre.global.property.ClovaProperty;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +38,7 @@ import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InterviewService {
 
     private final InterviewSessionRepository interviewSessionRepository;
@@ -231,6 +236,117 @@ public class InterviewService {
                 .durationSeconds(updatedInterview.getDurationSecond())
                 .qna(updatedInterview.getQnas())
                 .build();
+    }
+
+    public InterviewAnalysisResult analyzeInterview(String fullTranscript) {
+
+        String systemPrompt = """
+                당신은 전문 면접 평가자입니다.
+                
+                면접 내용을 분석하여 다음을 평가하세요:
+                1. 강점 (구체적으로 3개)
+                2. 약점 (개선이 필요한 부분 3개)
+                3. 전체 AI 피드백 (적당한 양의 종합적인 평가와 조언)
+                4. 5가지 역량별 점수 (0-100점)
+                   - PROBLEM_SOLVING: 문제해결력
+                   - COMMUNICATION: 의사소통능력
+                   - TEAMWORK: 팀워크/협업
+                   - ADAPTABILITY: 적응력/유연성
+                   - INITIATIVE: 주도성/자기주도성
+                
+                반드시 다음 JSON 형식으로만 응답하세요:
+                {
+                  "strengths": ["강점1", "강점2", "강점3"],
+                  "weaknesses": ["약점1", "약점2", "약점3"],
+                  "aiFeedback": "전체 피드백 내용",
+                  "competencyScores": {
+                    "PROBLEM_SOLVING": 85,
+                    "COMMUNICATION": 78,
+                    "TEAMWORK": 92,
+                    "ADAPTABILITY": 70,
+                    "INITIATIVE": 88
+                  }
+                }
+                
+                주의: 백틱(```), 'json' 키워드, 기타 마크다운 문법을 절대 사용하지 마세요. 순수 JSON 객체만 반환하세요.
+                """;
+
+        List<Map<String, Object>> messages = List.of(
+                Map.of(
+                        "role", "user",
+                        "content", """
+                                다음 면접 내용을 분석해주세요:
+                                
+                                [면접 내용]
+                                %s
+                                """.formatted(fullTranscript)
+                )
+        );
+
+        Map<String, Object> payloadMap = Map.of(
+                "anthropic_version", "bedrock-2023-05-31",
+                "max_tokens", 2000,
+                "temperature", 0.3,
+                "system", systemPrompt,
+                "messages", messages
+        );
+
+        try {
+            String payload = objectMapper.writeValueAsString(payloadMap);
+
+            InvokeModelRequest request = InvokeModelRequest.builder()
+                    .modelId(bedrockProperty.getModelId())
+                    .body(SdkBytes.fromString(payload, StandardCharsets.UTF_8))
+                    .contentType("application/json")
+                    .accept("application/json")
+                    .build();
+
+            InvokeModelResponse response = bedrockRuntimeClient.invokeModel(request);
+
+            String responseBody = response.body().asUtf8String();
+            JsonNode jsonResponse = objectMapper.readTree(responseBody);
+
+            String analysisText = jsonResponse
+                    .get("content")
+                    .get(0)
+                    .get("text")
+                    .asText();
+
+            // JSON 파싱
+            JsonNode analysisJson = objectMapper.readTree(analysisText);
+
+            // 강점 추출
+            List<String> strengths = new ArrayList<>();
+            analysisJson.get("strengths").forEach(node -> strengths.add(node.asText()));
+
+            // 약점 추출
+            List<String> weaknesses = new ArrayList<>();
+            analysisJson.get("weaknesses").forEach(node -> weaknesses.add(node.asText()));
+
+            // AI 피드백
+            String aiFeedback = analysisJson.get("aiFeedback").asText();
+
+            // 역량별 점수 추출
+            Map<Competency, Integer> competencyScores = new HashMap<>();
+            JsonNode scoresNode = analysisJson.get("competencyScores");
+
+            competencyScores.put(Competency.PROBLEM_SOLVING, scoresNode.get("PROBLEM_SOLVING").asInt());
+            competencyScores.put(Competency.COMMUNICATION, scoresNode.get("COMMUNICATION").asInt());
+            competencyScores.put(Competency.TEAMWORK, scoresNode.get("TEAMWORK").asInt());
+            competencyScores.put(Competency.ADAPTABILITY, scoresNode.get("ADAPTABILITY").asInt());
+            competencyScores.put(Competency.INITIATIVE, scoresNode.get("INITIATIVE").asInt());
+
+            return InterviewAnalysisResult.builder()
+                    .strengths(strengths)
+                    .weaknesses(weaknesses)
+                    .aiFeedback(aiFeedback)
+                    .competencyScores(competencyScores)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("면접 분석 실패: {}", e.getMessage(), e);
+            throw InterviewExceptions.Parsing_Failed.toException();
+        }
     }
 }
 

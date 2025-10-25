@@ -1,5 +1,6 @@
 package com.flex.interpre.domain.interview.dto.response;
 
+import com.flex.interpre.domain.interview.entity.InterviewReport;
 import lombok.Builder;
 
 @Builder
@@ -10,6 +11,7 @@ public record InterviewResponse(
         String question,
         String audio,
         Integer questionNumber,
+        InterviewReport interviewReport,
         boolean isFinal
 ) {
 }
