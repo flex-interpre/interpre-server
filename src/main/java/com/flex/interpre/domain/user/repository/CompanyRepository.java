@@ -15,5 +15,5 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
     @Query("SELECT c FROM Company c LEFT JOIN FETCH c.recruitments r WHERE c.id = :companyId AND (r.active = true OR r IS NULL)")
     Optional<Company> findByIdWithActiveRecruitments(@Param("companyId") UUID companyId);
 
-    Optional<Company> findByName(String name);
+    Optional<Company> findByCompanyName(String companyName);
 }

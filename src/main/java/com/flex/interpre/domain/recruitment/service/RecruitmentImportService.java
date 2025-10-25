@@ -30,7 +30,7 @@ public class RecruitmentImportService {
         for (RecruitmentImportRequest request : requests) {
             try {
                 // 회사명으로 Company 찾거나 생성
-                Company company = companyRepository.findByName(request.companyName())
+                Company company = companyRepository.findByCompanyName(request.companyName())
                         .orElseGet(() -> companyRepository.save(
                                 Company.builder()
                                         .companyName(request.companyName())
