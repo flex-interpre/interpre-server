@@ -42,6 +42,14 @@ spring:
           min-idle: 0
           max-wait: 3000ms
 
+#    opensearch:
+#      client:
+#        username: ${OPENSEARCH_USERNAME}
+#        password: ${OPENSEARCH_PASSWORD}
+#        endpoints: ${OPENSEARCH_HOST}:${OPENSEARCH_PORT}
+#      connection-timeout: 5000
+#      socket-timeout: 60000
+
   security:
     oauth2:
       client:
@@ -88,3 +96,9 @@ naver:
     url: ${CLOVA_BASE_URL}
     api-key-id: ${CLOVA_REQUEST_ID}
     api-key: ${CLOVA_API_KEY}
+
+opensearch:
+  host: ${OPENSEARCH_HOST}
+  port: ${OPENSEARCH_PORT}
+  username: ${OPENSEARCH_USERNAME}
+  password: ${OPENSEARCH_PASSWORD}
