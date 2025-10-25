@@ -79,7 +79,13 @@ public class RecruitmentService {
     @Transactional
     @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
     public void deleteRecruitment(Recruitment recruitment) {
+        recruitmentRepository.delete(recruitment); // DB에서 삭제
 
-        recruitmentRepository.delete(recruitment);
+        try {
+            recruitmentIndexService.deleteRecruitment(recruitment.getId());
+            log.info("공고 인덱스 문서 삭제 완료: {}", recruitment.getId());
+        } catch (Exception e) {
+            log.error("공고 인덱스 문서 삭제 실패 ({}): {}", recruitment.getId(), e.getMessage());
+        }
     }
 }
