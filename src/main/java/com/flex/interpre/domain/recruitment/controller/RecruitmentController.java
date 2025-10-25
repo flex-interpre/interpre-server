@@ -10,6 +10,7 @@ import com.flex.interpre.domain.recruitment.service.RecruitmentService;
 import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -29,7 +30,7 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 생성")
     @PostMapping
-    public ApiResponse<RecruitmentResponse> create(@AuthenticationPrincipal User user, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
+    public ApiResponse<RecruitmentResponse> create(@AuthenticationPrincipal @Parameter(hidden = true) User user, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
         return ApiResponse.ok(recruitmentService.createRecruitment(user, request));
     }
 
