@@ -1,6 +1,7 @@
 package com.flex.interpre.domain.interview.controller;
 
 import com.flex.interpre.domain.document.entity.Document;
+import com.flex.interpre.domain.interview.dto.request.ModifyTitleRequest;
 import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
 import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
@@ -13,8 +14,10 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,5 +48,13 @@ public class InterviewController {
     public ApiResponse<InterviewDetailResponse> getInterviewHistoryDetail(@PathVariable Interview interview) {
 
         return ApiResponse.ok(interviewService.getInterviewHistoryDetail(interview));
+    }
+
+    @PatchMapping("/{interview}/name")
+    @Operation(summary = "면접 기록 제목 수정")
+    public ApiResponse<InterviewDetailResponse> updateInterviewTitle(@PathVariable Interview interview,
+                                                                     @RequestBody ModifyTitleRequest request) {
+
+        return ApiResponse.ok(interviewService.updateInterviewTitle(interview, request.title()));
     }
 }

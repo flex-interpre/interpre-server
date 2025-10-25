@@ -218,5 +218,19 @@ public class InterviewService {
                 .qna(interview.getQnas())
                 .build();
     }
+
+    public InterviewDetailResponse updateInterviewTitle(Interview interview, String title) {
+
+        interview.setTitle(title);
+        Interview updatedInterview = interviewRepository.save(interview);
+
+        return InterviewDetailResponse.builder()
+                .id(updatedInterview.getId())
+                .createdAt(updatedInterview.getCreatedAt())
+                .title(updatedInterview.getTitle())
+                .durationSeconds(updatedInterview.getDurationSecond())
+                .qna(updatedInterview.getQnas())
+                .build();
+    }
 }
 
