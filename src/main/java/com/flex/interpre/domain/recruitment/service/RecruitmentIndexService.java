@@ -100,6 +100,7 @@ public class RecruitmentIndexService {
                 .toList();
     }
 
+
     @SneakyThrows
     public List<UUID> searchIdsByKeyword(String keyword, String excludeKeyword, Set<String> fields){
         if (keyword == null || keyword.isBlank()) return List.of();
@@ -129,6 +130,7 @@ public class RecruitmentIndexService {
                 .map(hit -> UUID.fromString(hit.source().getId().toString()))
                 .toList();
     }
+
 
     // 공고문 전체 텍스트 생성 (임베딩용)
     private String buildFullText(Recruitment recruitment) {
