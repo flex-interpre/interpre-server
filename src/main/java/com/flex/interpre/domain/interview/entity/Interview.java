@@ -10,6 +10,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -33,9 +35,13 @@ public class Interview {
     private String title;
 
     @Column(name = "duration_second")
-    private Integer durationSecond;
+    private Long durationSecond;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_seeker_id")
     private JobSeeker jobSeeker;
+
+    @OneToMany(mappedBy = "interview", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<Qna> qnas = new ArrayList<>();
 }
