@@ -14,6 +14,19 @@ import com.flex.interpre.domain.interview.repository.QnaRepository;
 import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
+import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,20 +37,13 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
 @Component
 @RequiredArgsConstructor
 public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewChatRepository interviewChatRepository;
+    private final ClovaEmbeddingService clovaEmbeddingService;
     private final QnaRepository qnaRepository;
     private final InterviewRepository interviewRepository;
     private final InterviewService interviewService;
@@ -65,7 +71,6 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             String firstQuestion = interviewService.generateQuestions(document, new ArrayList<>());
             byte[] questionAudio = interviewService.tts(firstQuestion);
             String audioBase64 = Base64.getEncoder().encodeToString(questionAudio);
-
 
             //중간 질의응답 저장 용
             InterviewChat interviewChat = InterviewChat.builder()
@@ -105,7 +110,8 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     }
 
     @Override
-    public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message) throws IOException {
+    public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message)
+            throws IOException {
 
         try {
             String wsSessionId = session.getId();
@@ -113,7 +119,6 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             ByteBuffer byteBuffer = message.getPayload();
             byte[] audioChunk = new byte[byteBuffer.remaining()];
             byteBuffer.get(audioChunk);
-
 
             // 청크를 리스트에 추가
             List<byte[]> chunks = audioChunksMap.get(wsSessionId);
@@ -327,17 +332,29 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         return Duration.between(start, LocalDateTime.now()).toMinutes();
     }
 
-    private void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration) throws IOException {
+    private void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration)
+            throws IOException {
 
         InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
 
-        Interview interview = interviewRepository.findById(interviewSession.getInterviewId()).orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
+        Interview interview = interviewRepository.findById(interviewSession.getInterviewId())
+                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
 
-        List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(interviewSession.getInterviewId());
+        List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(
+                interviewSession.getInterviewId());
 
         //Redis에 저장된 채팅 기록 Qna 객체로 변환
         List<Qna> qnas = chatHistory.stream().map(chat -> Qna.from(chat, interview)).toList();
+
+        String fullTranscript = qnas.stream()
+                .map(qna -> String.format("질문: %s\n답변: %s", qna.getQuestion(), qna.getAnswer()))
+                .collect(Collectors.joining("\n\n"));
+
+        // 인터뷰 기록 인베딩
+        List<Double> embedding = clovaEmbeddingService.embed(fullTranscript);
+        interview.setEmbedding(embedding);
+
         //전부 저장
         qnaRepository.saveAll(qnas);
 
