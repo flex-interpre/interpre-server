@@ -12,12 +12,13 @@ import java.util.UUID;
 @AllArgsConstructor
 public class RecruitmentDocumentIndex {
 
-    @Id
-    private UUID id;
+    private UUID id;           // 공고문 PK
+    private CompanyInfo company;
+//    private UUID companyId;    // 회사 PK
+//    private String companyName;
 
     private String title;
     private String description;
-    private String companyName;
     private String location;
 
     private List<String> jobAreas;
@@ -30,4 +31,15 @@ public class RecruitmentDocumentIndex {
     private List<String> skills;
 
     private List<Double> embedding;
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CompanyInfo {
+        private UUID id;
+        private String companyName;
+    }
 }
+

@@ -13,15 +13,16 @@ public record RecruitmentImportRequest(
         String title,
         String description,
         LocalDateTime deadline,
-        Set<Area> jobAreas,
+        Set<String> jobAreas,
         String location,
-        Set<JobFirst> jobFirsts,
-        Set<JobSecond> jobSeconds,
-        Set<JobThird> jobThirds,
-        Set<EmploymentType> employmentTypes,
+        Set<String> jobFirsts,
+        Set<String> jobSeconds,
+        Set<String> jobThirds,
+        Set<String> employmentTypes,
         Integer minExperience,
         Integer maxExperience,
         Set<String> requirements,
         Set<String> benefits,
         Set<String> skills
 ) {}
+
