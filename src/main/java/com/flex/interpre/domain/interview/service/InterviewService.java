@@ -82,6 +82,8 @@ public class InterviewService {
                     .timeout(Duration.ofSeconds(30))
                     .block();
 
+            System.out.println(response);
+
             if (response == null || response.text() == null || response.text().isEmpty()) {
                 throw InterviewExceptions.STT_NO_RESULT.toException();
             }
