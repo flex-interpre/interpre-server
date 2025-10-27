@@ -293,7 +293,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
         // 인터뷰 결과 10분 이상이면 종료
         Long duration = checkInterviewEnd(interviewSession);
-        if (duration >= 10) {
+        if (duration >= 1) {
             finishInterview(session, sessionId, transcription, duration);
             return;
         }
