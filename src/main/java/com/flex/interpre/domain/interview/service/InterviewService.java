@@ -82,15 +82,12 @@ public class InterviewService {
                     .timeout(Duration.ofSeconds(30))
                     .block();
 
-            System.out.println(response);
-
             if (response == null || response.text() == null || response.text().isEmpty()) {
                 throw InterviewExceptions.STT_NO_RESULT.toException();
             }
             return response.text();
 
         } catch (Exception e) {
-            e.printStackTrace();
             throw InterviewExceptions.STT_PROCESSING_FAILED.toException();
         }
     }
@@ -176,7 +173,6 @@ public class InterviewService {
                     .asText();
 
         } catch (Exception e) {
-            e.printStackTrace();
             throw InterviewExceptions.Parsing_Failed.toException();
         }
     }
@@ -207,7 +203,6 @@ public class InterviewService {
 
             return audioData;
         } catch (Exception e) {
-            e.printStackTrace();
             throw InterviewExceptions.TTS_PROCESSING_FAILED.toException();
         }
     }
@@ -354,7 +349,6 @@ public class InterviewService {
                     .build();
 
         } catch (Exception e) {
-            e.printStackTrace();
             log.error("면접 분석 실패: {}", e.getMessage(), e);
             throw InterviewExceptions.Parsing_Failed.toException();
         }

@@ -33,12 +33,9 @@ public class DocumentService {
     @Transactional
     @PreAuthorize("hasRole('JOB_SEEKER')")
     public DocumentResponse uploadDocument(User user, DocumentUploadRequest request){
-        System.out.println("서비스 진입");
         JobSeeker jobSeeker = user.getJobSeeker();
-        System.out.println("잡시커: " + jobSeeker);
 
         String fileUrl = s3Uploader.uploadDocument(request.file(), DIR_NAME); // s3 저장 후 url
-        System.out.println("파일url: " + fileUrl);
         String extractedText = pdfExtractor.extract(request.file()); // pdf -> text로 변환
         List<Double> embedding = clovaEmbeddingService.embed(extractedText); // text -> embedding
 
