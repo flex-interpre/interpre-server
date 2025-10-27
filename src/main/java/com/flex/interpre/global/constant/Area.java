@@ -5,26 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-//public enum Area {
-//    서울,
-//    경기,
-//    인천,
-//    강원,
-//    충북,
-//    충남,
-//    전북,
-//    전남,
-//    경북,
-//    경남,
-//    대전,
-//    대구,
-//    광주,
-//    부산,
-//    울산,
-//    세종,
-//    제주;
-//}
-
 public enum Area {
     SEOUL("서울"),
     GYEONGGI("경기"),

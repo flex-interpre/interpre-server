@@ -293,6 +293,72 @@ public class OnboardingAIService {
         """.formatted(areaList, jobFirstList, jobSecondList);
     }
 
+    @Transactional
+    public void confirmSelections(User user, OnboardingConfirmRequest req) {
+        OnboardingResult result = OnboardingResult.builder()
+                .recommendedAreas(req.areas().stream().map(this::convertToAreaEnum).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .recommendedJobFirsts(req.jobFirsts().stream().map(JobFirst::valueOf).collect(Collectors.toSet()))
+                .recommendedJobSeconds(req.jobSeconds().stream().map(JobSecond::valueOf).collect(Collectors.toSet()))
+                .build();
+
+        updateJobSeekerInfo(user, result);
+    }
+
+    // 채팅 히스토리 조회
+    public List<OnboardingSessionCache.ChatMessage> getChatHistory(User user) {
+        return cacheRepository.findByUserId(user.getId())
+                .map(OnboardingSessionCache::getMessages)
+                .orElse(Collections.emptyList());
+    }
+
+    // 세션 초기화 (재시작)
+    public void resetSession(User user) {
+        cacheRepository.delete(user.getId());
+        log.info("온보딩 세션 초기화: userId={}", user.getId());
+    }
+
+    @Transactional
+    public OnboardingChatResponse handleChoice(User user, OnboardingChoiceRequest request) {
+        // 캐시 세션 조회
+        OnboardingSessionCache session = cacheRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("온보딩 세션을 찾을 수 없습니다."));
+
+        // 선택 내용을 자연스러운 문장으로 변환해 LLM에 전달
+        String userMessage = switch (request.type().toUpperCase()) {
+            case "AREA" -> "저는 " + request.value() + " 지역에서 일하고 싶어요.";
+            case "JOB_FIRST" -> "저는 " + request.value() + " 분야가 좋아요.";
+            case "JOB_SECOND" -> "저는 " + request.value() + " 쪽이 끌려요.";
+            default -> request.value();
+        };
+        session.addMessage("user", userMessage);
+
+        // Bedrock 호출 → 다음 대화 응답 생성
+        String aiResponse = callBedrockWithHistory(session);
+        session.addMessage("assistant", aiResponse);
+
+        // 세션 저장
+        cacheRepository.save(session);
+
+        // LLM이 [ONBOARDING_COMPLETE] 태그 보낸 경우 → DB 반영
+        boolean isCompleted = aiResponse.contains("[ONBOARDING_COMPLETE]");
+        if (isCompleted) {
+            OnboardingResult result = extractResultFromResponse(aiResponse);
+            updateJobSeekerInfo(user, result);
+            session.setCompleted(true);
+            cacheRepository.save(session);
+        }
+
+        // 텍스트 반환
+        return OnboardingChatResponse.builder()
+                .aiResponse(cleanResponse(aiResponse))
+                .isCompleted(isCompleted)
+                .currentStep(isCompleted ? "COMPLETED" : "IN_PROGRESS")
+                .build();
+    }
+
+
+    /*  내부 메서드  */
+
     // Area, JobFirst 공통 Enum 문자열 생성
     private String buildEnumList(Enum<?>[] values) {
         StringBuilder sb = new StringBuilder();
@@ -376,7 +442,6 @@ public class OnboardingAIService {
                 .trim();
     }
 
-
     private void saveToDatabase(OnboardingSessionCache cache) {
         // 완료된 세션만 DB에 영구 저장
         StringBuilder conversationHistory = new StringBuilder();
@@ -399,17 +464,6 @@ public class OnboardingAIService {
         log.info("온보딩 세션 DB 저장 완료: userId={}", cache.getUserId());
     }
 
-    @Transactional
-    public void confirmSelections(User user, OnboardingConfirmRequest req) {
-        OnboardingResult result = OnboardingResult.builder()
-                .recommendedAreas(req.areas().stream().map(Area::valueOf).collect(Collectors.toSet()))
-                .recommendedJobFirsts(req.jobFirsts().stream().map(JobFirst::valueOf).collect(Collectors.toSet()))
-                .recommendedJobSeconds(req.jobSeconds().stream().map(JobSecond::valueOf).collect(Collectors.toSet()))
-                .build();
-
-        updateJobSeekerInfo(user, result);
-    }
-
     private void updateJobSeekerInfo(User user, OnboardingResult result) {
         JobSeeker jobSeeker = jobSeekerRepository.findByUserIdWithUser(user.getId())
                 .orElseThrow(() -> new RuntimeException("구직자 정보를 찾을 수 없습니다."));
@@ -424,56 +478,91 @@ public class OnboardingAIService {
                 user.getId(), result.recommendedAreas(), result.recommendedJobFirsts());
     }
 
-    // 채팅 히스토리 조회
-    public List<OnboardingSessionCache.ChatMessage> getChatHistory(User user) {
-        return cacheRepository.findByUserId(user.getId())
-                .map(OnboardingSessionCache::getMessages)
-                .orElse(Collections.emptyList());
-    }
+    // 한글 -> 영어 Enum 매핑
+    private Area convertToAreaEnum(String value) {
+        if (value == null) return null;
 
-    // 세션 초기화 (재시작)
-    public void resetSession(User user) {
-        cacheRepository.delete(user.getId());
-        log.info("온보딩 세션 초기화: userId={}", user.getId());
-    }
+        String cleaned = value.trim()
+                .replace("시", "")
+                .replace("도", "")
+                .replace(" ", "")
+                .toUpperCase();
 
-    @Transactional
-    public OnboardingChatResponse handleChoice(User user, OnboardingChoiceRequest request) {
-        // 캐시 세션 조회
-        OnboardingSessionCache session = cacheRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("온보딩 세션을 찾을 수 없습니다."));
+        Map<String, Area> areaMap = Map.ofEntries(
+                Map.entry("서울", Area.SEOUL),
+                Map.entry("서울특별", Area.SEOUL),
+                Map.entry("SEOUL", Area.SEOUL),
 
-        // 선택 내용을 자연스러운 문장으로 변환해 LLM에 전달
-        String userMessage = switch (request.type().toUpperCase()) {
-            case "AREA" -> "저는 " + request.value() + " 지역에서 일하고 싶어요.";
-            case "JOB_FIRST" -> "저는 " + request.value() + " 분야가 좋아요.";
-            case "JOB_SECOND" -> "저는 " + request.value() + " 쪽이 끌려요.";
-            default -> request.value();
-        };
-        session.addMessage("user", userMessage);
+                Map.entry("경기", Area.GYEONGGI),
+                Map.entry("경기도", Area.GYEONGGI),
+                Map.entry("GYEONGGI", Area.GYEONGGI),
 
-        // Bedrock 호출 → 다음 대화 응답 생성
-        String aiResponse = callBedrockWithHistory(session);
-        session.addMessage("assistant", aiResponse);
+                Map.entry("인천", Area.INCHEON),
+                Map.entry("INCHEON", Area.INCHEON),
 
-        // 세션 저장
-        cacheRepository.save(session);
+                Map.entry("강원", Area.GANGWON),
+                Map.entry("GANGWON", Area.GANGWON),
 
-        // LLM이 [ONBOARDING_COMPLETE] 태그 보낸 경우 → DB 반영
-        boolean isCompleted = aiResponse.contains("[ONBOARDING_COMPLETE]");
-        if (isCompleted) {
-            OnboardingResult result = extractResultFromResponse(aiResponse);
-            updateJobSeekerInfo(user, result);
-            session.setCompleted(true);
-            cacheRepository.save(session);
+                Map.entry("충북", Area.CHUNGBUK),
+                Map.entry("충청북", Area.CHUNGBUK),
+                Map.entry("CHUNGBUK", Area.CHUNGBUK),
+
+                Map.entry("충남", Area.CHUNGNAM),
+                Map.entry("충청남", Area.CHUNGNAM),
+                Map.entry("CHUNGNAM", Area.CHUNGNAM),
+
+                Map.entry("전북", Area.JEONBUK),
+                Map.entry("전라북", Area.JEONBUK),
+                Map.entry("JEONBUK", Area.JEONBUK),
+
+                Map.entry("전남", Area.JEONNAM),
+                Map.entry("전라남", Area.JEONNAM),
+                Map.entry("JEONNAM", Area.JEONNAM),
+
+                Map.entry("경북", Area.GYEONGBUK),
+                Map.entry("경상북", Area.GYEONGBUK),
+                Map.entry("GYEONGBUK", Area.GYEONGBUK),
+
+                Map.entry("경남", Area.GYEONGNAM),
+                Map.entry("경상남", Area.GYEONGNAM),
+                Map.entry("GYEONGNAM", Area.GYEONGNAM),
+
+                Map.entry("대전", Area.DAEJEON),
+                Map.entry("DAEJEON", Area.DAEJEON),
+
+                Map.entry("대구", Area.DAEGU),
+                Map.entry("DAEGU", Area.DAEGU),
+
+                Map.entry("광주", Area.GWANGJU),
+                Map.entry("GWANGJU", Area.GWANGJU),
+
+                Map.entry("부산", Area.BUSAN),
+                Map.entry("BUSAN", Area.BUSAN),
+
+                Map.entry("울산", Area.ULSAN),
+                Map.entry("ULSAN", Area.ULSAN),
+
+                Map.entry("세종", Area.SEJONG),
+                Map.entry("SEJONG", Area.SEJONG),
+
+                Map.entry("제주", Area.JEJU),
+                Map.entry("JEJU", Area.JEJU)
+        );
+
+        // 영어 대문자 직접 시도
+        try {
+            return Area.valueOf(cleaned);
+        } catch (IllegalArgumentException ignored) {
         }
 
-        // 텍스트 반환
-        return OnboardingChatResponse.builder()
-                .aiResponse(cleanResponse(aiResponse))
-                .isCompleted(isCompleted)
-                .currentStep(isCompleted ? "COMPLETED" : "IN_PROGRESS")
-                .build();
+        // 한글/혼합 매핑
+        Area mapped = areaMap.getOrDefault(cleaned, null);
+        if (mapped != null) return mapped;
+
+
+        log.warn("⚠️ Unknown Area value: {}", value);
+        return null;
     }
+
 }
 
