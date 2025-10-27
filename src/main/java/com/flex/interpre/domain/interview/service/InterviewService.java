@@ -4,11 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.document.repository.DocumentRepository;
-import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
-import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
-import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
-import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
-import com.flex.interpre.domain.interview.dto.response.SessionResponse;
+import com.flex.interpre.domain.interview.dto.response.*;
 import com.flex.interpre.domain.interview.entity.Competency;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.entity.InterviewChat;
@@ -21,13 +17,6 @@ import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import com.flex.interpre.global.property.BedrockProperty;
 import com.flex.interpre.global.property.ClovaProperty;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -39,6 +28,10 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
+
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -89,12 +82,15 @@ public class InterviewService {
                     .timeout(Duration.ofSeconds(30))
                     .block();
 
+            System.out.println(response);
+
             if (response == null || response.text() == null || response.text().isEmpty()) {
                 throw InterviewExceptions.STT_NO_RESULT.toException();
             }
             return response.text();
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw InterviewExceptions.STT_PROCESSING_FAILED.toException();
         }
     }
@@ -106,9 +102,9 @@ public class InterviewService {
                 
                 면접 규칙:
                 1. 자소서 내용을 바탕으로 질문하되, 대화 맥락을 고려하세요
-                2. 답변 수준에 맞춰 질문 난이도를 조절하세요
+                2. 답변 수준에 맞춰 난이도를 조절하되, 동일 주제의 꼬리질문은 최대 2회까지만 허용하세요.
                 3. 반드시 한 번에 하나의 질문만 작성하세요. 절대로 두 개 이상의 질문을 한 응답에 포함하지 마세요.
-                4. 답변이 불충분하면 후속 질문으로 깊이 파고드세요
+                4. 답변이 모호하거나 핵심이 빠진 경우에만 후속 질문을 하세요.
                 5. 적절한 때 다른 주제로 자연스럽게 전환하세요
                 6. 사용자의 대답을 다음 질문에서 그대로 따라 하는 건 지양하고 비슷한 질문은 최대한 피하세요
                 
@@ -182,6 +178,7 @@ public class InterviewService {
                     .asText();
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw InterviewExceptions.Parsing_Failed.toException();
         }
     }
@@ -212,6 +209,7 @@ public class InterviewService {
 
             return audioData;
         } catch (Exception e) {
+            e.printStackTrace();
             throw InterviewExceptions.TTS_PROCESSING_FAILED.toException();
         }
     }
@@ -358,6 +356,7 @@ public class InterviewService {
                     .build();
 
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("면접 분석 실패: {}", e.getMessage(), e);
             throw InterviewExceptions.Parsing_Failed.toException();
         }

@@ -64,6 +64,7 @@ dependencies {
     // pgvector
     implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'com.pgvector:pgvector:0.1.4'
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.7.3'
     
     // opensearch
     implementation 'org.opensearch.client:opensearch-java:2.12.0'

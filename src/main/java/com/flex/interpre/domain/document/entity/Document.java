@@ -51,7 +51,7 @@ public class Document {
     @Column(columnDefinition = "text", nullable = false)
     private String contentText;
 
-    @Column(name = "document_vector", columnDefinition = "vector(1024)")
+    @Column(name = "document_vector", columnDefinition = "float8[]")
     private List<Double> documentVector;
 
     /* 메서드 */
