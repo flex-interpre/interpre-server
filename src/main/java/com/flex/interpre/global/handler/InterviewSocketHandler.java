@@ -135,6 +135,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     }
 
     @Override
+    @Transactional
     public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws IOException {
 
         try {
@@ -270,7 +271,8 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         session.sendMessage(new TextMessage(json));
     }
 
-    private void sendQuestion(WebSocketSession session, String sessionId, String transcription) throws IOException {
+    @Transactional
+    protected void sendQuestion(WebSocketSession session, String sessionId, String transcription) throws IOException {
 
         InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
