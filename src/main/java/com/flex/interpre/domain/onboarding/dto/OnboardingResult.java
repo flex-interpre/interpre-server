@@ -13,6 +13,6 @@ import java.util.Set;
 public record OnboardingResult(
         Set<Area> recommendedAreas,
         Set<JobFirst> recommendedJobFirsts,
-        Set<JobSecond> recommendedJobSeconds,
-        Set<JobThird> recommendedJobThirds
+        Set<JobSecond> recommendedJobSeconds
+//        Set<JobThird> recommendedJobThirds
 ) {}

@@ -15,7 +15,6 @@ import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
 import com.flex.interpre.global.constant.JobSecond;
-import com.flex.interpre.global.constant.JobThird;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -136,157 +135,30 @@ public class OnboardingAIService {
         }
     }
 
+    // 프롬프트 구성
     private String buildSystemPrompt() {
+        String areaList = buildEnumList(Area.values());
+        String jobFirstList = buildEnumList(JobFirst.values());
+        String jobSecondList = buildJobSecondList();
+
         return """
             당신은 구직자의 온보딩을 도와주는 친절한 취업 상담 AI입니다.
             
             ## 목표
             대화를 통해 다음 정보를 자연스럽게 파악하고 추천하세요:
             1. 희망 근무 지역
-            2. 희망 직무 분야 (대/중/소 분류)
+            2. 희망 직무 분야 (대/중 분류)
             
             ## 사용 가능한 옵션
             
             ### 지역 (Area):
-            SEOUL, BUSAN, DAEGU, INCHEON, GWANGJU, DAEJEON, ULSAN, SEJONG,
-            GYEONGGI, GANGWON, CHUNGBUK, CHUNGNAM, JEONBUK, JEONNAM, GYEONGBUK, GYEONGNAM, JEJU
+            %s
             
             ### 직무 대분류 (JobFirst):
-                경영_사무_금융_보험,
-                연구_및_공학기술,
-                교육_법률_사회복지_경찰_소방_및_군인,
-                보건_의료,
-                예술_디자인_방송_스포츠,
-                미용_여행_숙박_음식_경비_돌봄_청소,
-                영업_판매_운전_운송,
-                건설_채굴,
-                설치_정비_생산_기계_금속_재료,
-                설치_정비_생산_전기_전자_정보통신,
-                설치_정비_생산_화학_환경_섬유_의복_식품가공,
-                설치_정비_생산_인쇄_목재_공예_및_제조_단순,
-                농림어업직
-                    
+            %s
                     
             ### 직무 중분류 (JobSecond):
-                    행정_경영_금융_보험_관리직(JobFirst.경영_사무_금융_보험),
-                    교육_법률_복지_의료_예술_방송_정보통신_등_전문서비스_관리직(JobFirst.경영_사무_금융_보험),
-                    미용_여행_숙박_음식_등_개인서비스_및_영업_판매_운송_관리직(JobFirst.경영_사무_금융_보험),
-                    건설_채굴_제조_생산_관리직(JobFirst.경영_사무_금융_보험),
-                    행정_경영_회계_광고_상품기획_전문가(JobFirst.경영_사무_금융_보험),
-                    정부_행정_사무(JobFirst.경영_사무_금융_보험),
-                    경영지원_사무(JobFirst.경영_사무_금융_보험),
-                    회계_경리_사무(JobFirst.경영_사무_금융_보험),
-                    무역_운송_자재_구매_생산_품질_사무(JobFirst.경영_사무_금융_보험),
-                    안내_접수_고객상담_사무(JobFirst.경영_사무_금융_보험),
-                    통계_비서_사무보조_기타_사무(JobFirst.경영_사무_금융_보험),
-                    금융_보험_전문가(JobFirst.경영_사무_금융_보험),
-                    금융_보험_사무_및_영업(JobFirst.경영_사무_금융_보험),
-                    인문_사회_자연_생명과학_연구_및_시험(JobFirst.연구_및_공학기술),
-                    컴퓨터하드웨어_통신공학(JobFirst.연구_및_공학기술),
-                    컴퓨터시스템(JobFirst.연구_및_공학기술),
-                    소프트웨어(JobFirst.연구_및_공학기술),
-                    네트워크_시스템_및_정보보안(JobFirst.연구_및_공학기술),
-                    데이터_및_정보시스템_웹_운영(JobFirst.연구_및_공학기술),
-                    통신_방송_송출(JobFirst.연구_및_공학기술),
-                    건설_채굴_연구_및_공학기술(JobFirst.연구_및_공학기술),
-                    기계_로봇_금속_재료_연구_및_공학기술(JobFirst.연구_및_공학기술),
-                    전기_전자_연구_및_공학기술(JobFirst.연구_및_공학기술),
-                    화학_에너지_환경_연구_및_공학기술(JobFirst.연구_및_공학기술),
-                    섬유_식품_소방_방재_산업안전_연구_및_공학기술(JobFirst.연구_및_공학기술),
-                    제도사(JobFirst.연구_및_공학기술),
-                    대학교수_학교_및_유치원_교사(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    외국어_문리_강사(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    정보통신_기술_기능계_강사(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    예능_학습지_기타_강사(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    장학관_교육조교(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    법률_전문가_및_법률_사무(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    사회복지_상담_직업상담_시민단체활동(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    보육교사_생활지도원_및_종교직(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    경찰_소방_교도_군인(JobFirst.교육_법률_사회복지_경찰_소방_및_군인),
-                    의사_한의사_치과의사(JobFirst.보건_의료),
-                    수의사(JobFirst.보건_의료),
-                    의료기사_치료사_재활사(JobFirst.보건_의료),
-                    그_외_보건_의료_종사자(JobFirst.보건_의료),
-                    작가_통_번역_및_출판물_전문가(JobFirst.예술_디자인_방송_스포츠),
-                    기자_및_언론_전문가(JobFirst.예술_디자인_방송_스포츠),
-                    학예사_사서_기록물관리사(JobFirst.예술_디자인_방송_스포츠),
-                    창작_공연(JobFirst.예술_디자인_방송_스포츠),
-                    제품_패션_실내장식_시각_디자이너(JobFirst.예술_디자인_방송_스포츠),
-                    미디어콘텐츠_UXUI_디자이너(JobFirst.예술_디자인_방송_스포츠),
-                    연극_영화_방송(JobFirst.예술_디자인_방송_스포츠),
-                    공연_음반_기획_및_매니저(JobFirst.예술_디자인_방송_스포츠),
-                    스포츠_레크리에이션(JobFirst.예술_디자인_방송_스포츠),
-                    미용_및_반려동물_서비스(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    결혼_장례_등_예식_서비스(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    여행_객실승무_숙박_오락_서비스(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    주방장_및_조리사(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    식당_서비스(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    경호_보안(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    경비원(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    돌봄_서비스(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    청소_방역_및_가사_서비스(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    검침_주차관리_및_기타_단순_서비스(JobFirst.미용_여행_숙박_음식_경비_돌봄_청소),
-                    부동산중개(JobFirst.영업_판매_운전_운송),
-                    기술_의약품_해외_영업_및_상품_중개(JobFirst.영업_판매_운전_운송),
-                    자동차_제품_기타_영업(JobFirst.영업_판매_운전_운송),
-                    텔레마케터(JobFirst.영업_판매_운전_운송),
-                    소규모_판매점장_및_상점_판매(JobFirst.영업_판매_운전_운송),
-                    통신서비스_온라인판매_상품대여_노점_이동판매_및_주유(JobFirst.영업_판매_운전_운송),
-                    매장_계산_및_매표(JobFirst.영업_판매_운전_운송),
-                    판촉_및_기타_판매_종사자(JobFirst.영업_판매_운전_운송),
-                    항공기_선박_철도_조종_및_관제(JobFirst.영업_판매_운전_운송),
-                    자동차_운전(JobFirst.영업_판매_운전_운송),
-                    물품이동장비_조작(JobFirst.영업_판매_운전_운송),
-                    택배_납품영업_선박갑판_하역_및_기타_운송(JobFirst.영업_판매_운전_운송),
-                    건설구조_기능(JobFirst.건설_채굴),
-                    건축마감_기능(JobFirst.건설_채굴),
-                    배관(JobFirst.건설_채굴),
-                    건설_채굴_기계_운전(JobFirst.건설_채굴),
-                    기타_건설_기능(JobFirst.건설_채굴),
-                    건설_채굴_단순_종사자(JobFirst.건설_채굴),
-                    기계장비_설치_정비(JobFirst.설치_정비_생산_기계_금속_재료),
-                    운송장비_정비(JobFirst.설치_정비_생산_기계_금속_재료),
-                    금형_및_공작기계_조작(JobFirst.설치_정비_생산_기계_금속_재료),
-                    냉난방_설비_자동_조립라인_산업용_로봇_조작(JobFirst.설치_정비_생산_기계_금속_재료),
-                    기계_및_운송장비_조립(JobFirst.설치_정비_생산_기계_금속_재료),
-                    금속관련_기계_설비_조작(JobFirst.설치_정비_생산_기계_금속_재료),
-                    판금_제관_단조_주조(JobFirst.설치_정비_생산_기계_금속_재료),
-                    용접(JobFirst.설치_정비_생산_기계_금속_재료),
-                    도장_도금(JobFirst.설치_정비_생산_기계_금속_재료),
-                    비금속제품_생산기계_조작(JobFirst.설치_정비_생산_기계_금속_재료),
-                    전기공(JobFirst.설치_정비_생산_전기_전자_정보통신),
-                    전기_전자_기기_설치_수리(JobFirst.설치_정비_생산_전기_전자_정보통신),
-                    발전_배전_장비_전기_전자_설비_조작(JobFirst.설치_정비_생산_전기_전자_정보통신),
-                    전기_전자_부품_제품_생산기계_조작(JobFirst.설치_정비_생산_전기_전자_정보통신),
-                    전기_전자_부품_제품_조립(JobFirst.설치_정비_생산_전기_전자_정보통신),
-                    정보통신기기_설치_수리(JobFirst.설치_정비_생산_전기_전자_정보통신),
-                    방송_통신장비_및_케이블_설치_수리(JobFirst.설치_정비_생산_전기_전자_정보통신),
-                    석유_화학물_가공장치_조작(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    고무_플라스틱_및_화학제품_생산기계_조작(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    환경_장치_조작(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    섬유_제조_및_가공_기계_조작(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    패턴_재단_재봉(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    의복_제조_및_수선(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    제화_기타_섬유_의복_기계_조작(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    제과_제빵_및_떡_제조(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    식품가공_기능원(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    식품가공_기계_조작(JobFirst.설치_정비_생산_화학_환경_섬유_의복_식품가공),
-                    인쇄기계_사진현상기_조작(JobFirst.설치_정비_생산_인쇄_목재_공예_및_제조_단순),
-                    목재_펄프_종이_생산(JobFirst.설치_정비_생산_인쇄_목재_공예_및_제조_단순),
-                    가구_목제품_제조_수리(JobFirst.설치_정비_생산_인쇄_목재_공예_및_제조_단순),
-                    공예_및_귀금속_세공(JobFirst.설치_정비_생산_인쇄_목재_공예_및_제조_단순),
-                    악기_간판_및_기타_제조(JobFirst.설치_정비_생산_인쇄_목재_공예_및_제조_단순),
-                    제조_단순_종사자(JobFirst.설치_정비_생산_인쇄_목재_공예_및_제조_단순),
-                    작물재배(JobFirst.농림어업직),
-                    낙농_사육(JobFirst.농림어업직),
-                    임업_종사자(JobFirst.농림어업직),
-                    어업_종사자(JobFirst.농림어업직),
-                    농림어업_단순_종사자(JobFirst.농림어업직)
-            
-            ### 직무 소분류 (JobThird):
-            REACT, VUE, ANGULAR, NODEJS, JAVA, PYTHON, SPRING, DJANGO,
-            ANDROID, IOS, FLUTTER, AWS, DOCKER, KUBERNETES, SQL, NOSQL,
-            FIGMA, PHOTOSHOP, ILLUSTRATOR, PREMIERE, AFTER_EFFECTS
+            %s
             
             ## 대화 가이드라인
             
@@ -295,8 +167,8 @@ public class OnboardingAIService {
             3. **경청과 공감**: 사용자 답변에 공감하고 긍정적으로 반응하세요
             4. **유연한 파악**: 정확한 용어가 아니어도 의도를 파악하여 매칭하세요
                - 예: "서울이나 경기" → SEOUL, GYEONGGI
-               - 예: "웹 개발자" → DEVELOPMENT, FRONTEND/BACKEND, REACT/NODEJS
-            5. **추가 질문**: 모호한 경우 "백엔드와 프론트엔드 중 어느 쪽에 관심이 있으신가요?" 같이 물어보세요
+               - 예: "연구직이나 개발자" → 연구_및_공학기술, 소프트웨어
+            5. **추가 질문**: 모호한 경우 "연구 쪽과 개발 쪽 중 어느 분야가 더 끌리시나요?" 같이 물어보세요
             
             ## 완료 조건
             
@@ -304,7 +176,6 @@ public class OnboardingAIService {
             - ✅ 희망 지역 1개 이상
             - ✅ JobFirst 1개 이상
             - ✅ JobSecond 1개 이상  
-            - ✅ JobThird 1개 이상
             
             ## 완료 시 응답 형식
             
@@ -314,16 +185,12 @@ public class OnboardingAIService {
             완벽합니다! 회원님의 정보를 정리해드릴게요 😊
             
             📍 희망 근무 지역: 서울, 경기
-            💼 희망 직무: 웹 개발 > 프론트엔드 > React
-            
-            이 정보를 바탕으로 맞춤 채용 공고를 추천해드리겠습니다!
-            곧 메인 화면으로 이동합니다. 감사합니다! 🎉
+            💼 희망 직무: 연구_및_공학기술 > 소프트웨어
             
             [ONBOARDING_COMPLETE]
             [AREAS:SEOUL,GYEONGGI]
-            [JOB_FIRST:DEVELOPMENT]
-            [JOB_SECOND:FRONTEND]
-            [JOB_THIRD:REACT]
+            [JOB_FIRST:연구_및_공학기술]
+            [JOB_SECOND:소프트웨어]
             ```
             
             ## 주의사항
@@ -332,14 +199,32 @@ public class OnboardingAIService {
             - 사용자가 이미 언급한 정보를 기억하고 활용하세요
             - 완료 조건이 충족되지 않았다면 부드럽게 추가 정보를 요청하세요
             - 특수 태그([...])는 시스템용이므로 응답 맨 끝에 포함하세요
-            """;
+            """.formatted(areaList, jobFirstList, jobSecondList);
+    }
+
+    // Area, JobFirst 공통 Enum 문자열 생성
+    private String buildEnumList(Enum<?>[] values) {
+        StringBuilder sb = new StringBuilder();
+        for (Enum<?> e : values) {
+            sb.append("- ").append(e.name()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    // JobSecond는 상위 JobFirst 표시 포함
+    private String buildJobSecondList() {
+        StringBuilder sb = new StringBuilder();
+        for (JobSecond js : JobSecond.values()) {
+            sb.append("- ").append(js.name())
+                    .append(" (").append(js.getParent().name()).append(")\n");
+        }
+        return sb.toString();
     }
 
     private OnboardingResult extractResultFromResponse(String response) {
         Set<Area> areas = new HashSet<>();
         Set<JobFirst> jobFirsts = new HashSet<>();
         Set<JobSecond> jobSeconds = new HashSet<>();
-        Set<JobThird> jobThirds = new HashSet<>();
 
         // [AREAS:...] 파싱
         Pattern areasPattern = Pattern.compile("\\[AREAS:([^\\]]+)\\]");
@@ -383,25 +268,10 @@ public class OnboardingAIService {
             }
         }
 
-        // [JOB_THIRD:...] 파싱
-        Pattern jobThirdPattern = Pattern.compile("\\[JOB_THIRD:([^\\]]+)\\]");
-        Matcher jobThirdMatcher = jobThirdPattern.matcher(response);
-        if (jobThirdMatcher.find()) {
-            String[] names = jobThirdMatcher.group(1).split(",");
-            for (String name : names) {
-                try {
-                    jobThirds.add(JobThird.valueOf(name.trim()));
-                } catch (IllegalArgumentException e) {
-                    log.warn("Invalid JobThird: {}", name);
-                }
-            }
-        }
-
         return OnboardingResult.builder()
                 .recommendedAreas(areas)
                 .recommendedJobFirsts(jobFirsts)
                 .recommendedJobSeconds(jobSeconds)
-                .recommendedJobThirds(jobThirds)
                 .build();
     }
 
@@ -412,7 +282,6 @@ public class OnboardingAIService {
                 .replaceAll("\\[AREAS:[^\\]]+\\]", "")
                 .replaceAll("\\[JOB_FIRST:[^\\]]+\\]", "")
                 .replaceAll("\\[JOB_SECOND:[^\\]]+\\]", "")
-                .replaceAll("\\[JOB_THIRD:[^\\]]+\\]", "")
                 .trim();
     }
 
@@ -447,7 +316,6 @@ public class OnboardingAIService {
         jobSeeker.setDesiredAreas(result.recommendedAreas());
         jobSeeker.setJobFirsts(result.recommendedJobFirsts());
         jobSeeker.setJobSeconds(result.recommendedJobSeconds());
-        jobSeeker.setJobThirds(result.recommendedJobThirds());
 
         jobSeekerRepository.save(jobSeeker);
 
