@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.onboarding.dto.request.OnboardingChatRequest;
 import com.flex.interpre.domain.onboarding.dto.request.OnboardingChoiceRequest;
+import com.flex.interpre.domain.onboarding.dto.request.OnboardingConfirmRequest;
 import com.flex.interpre.domain.onboarding.dto.response.OnboardingChatResponse;
 import com.flex.interpre.domain.onboarding.dto.response.OnboardingResult;
 import com.flex.interpre.domain.onboarding.entity.OnboardingSession;
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -388,8 +390,18 @@ public class OnboardingAIService {
         log.info("온보딩 세션 DB 저장 완료: userId={}", cache.getUserId());
     }
 
+    @Transactional
+    public void confirmSelections(User user, OnboardingConfirmRequest req) {
+        OnboardingResult result = OnboardingResult.builder()
+                .recommendedAreas(req.areas().stream().map(Area::valueOf).collect(Collectors.toSet()))
+                .recommendedJobFirsts(req.jobFirsts().stream().map(JobFirst::valueOf).collect(Collectors.toSet()))
+                .recommendedJobSeconds(req.jobSeconds().stream().map(JobSecond::valueOf).collect(Collectors.toSet()))
+                .build();
 
-    public void updateJobSeekerInfo(User user, OnboardingResult result) {
+        updateJobSeekerInfo(user, result);
+    }
+
+    private void updateJobSeekerInfo(User user, OnboardingResult result) {
         JobSeeker jobSeeker = jobSeekerRepository.findByUserIdWithUser(user.getId())
                 .orElseThrow(() -> new RuntimeException("구직자 정보를 찾을 수 없습니다."));
 

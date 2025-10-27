@@ -2,8 +2,8 @@ package com.flex.interpre.domain.onboarding.controller;
 
 import com.flex.interpre.domain.onboarding.dto.request.OnboardingChatRequest;
 import com.flex.interpre.domain.onboarding.dto.request.OnboardingChoiceRequest;
+import com.flex.interpre.domain.onboarding.dto.request.OnboardingConfirmRequest;
 import com.flex.interpre.domain.onboarding.dto.response.OnboardingChatResponse;
-import com.flex.interpre.domain.onboarding.dto.response.OnboardingResult;
 import com.flex.interpre.domain.onboarding.model.OnboardingSessionCache;
 import com.flex.interpre.domain.onboarding.service.OnboardingAIService;
 import com.flex.interpre.domain.user.entity.User;
@@ -48,8 +48,8 @@ public class OnboardingController {
     }
     @Operation(description = "선택 완료-> 구직자 정보 업데이트 (DB 반영)")
     @PostMapping("/confirm")
-    public ApiResponse<Void> confirmSelection(@AuthenticationPrincipal User user, @RequestBody OnboardingResult selectedResult) {
-        onboardingAIService.updateJobSeekerInfo(user, selectedResult);
+    public ApiResponse<Void> confirmSelection(@AuthenticationPrincipal User user, @RequestBody OnboardingConfirmRequest request) {
+        onboardingAIService.confirmSelections(user, request);
         return ApiResponse.ok();
     }
 
