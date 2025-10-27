@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/recruitments")
+@RequestMapping("/dataset/recruitments")
 @RequiredArgsConstructor
 public class RecruitmentImportController {
 
