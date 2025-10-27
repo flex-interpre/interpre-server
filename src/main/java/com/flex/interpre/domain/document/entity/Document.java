@@ -2,10 +2,8 @@ package com.flex.interpre.domain.document.entity;
 
 import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
 import com.flex.interpre.domain.user.entity.JobSeeker;
-import io.hypersistence.utils.hibernate.type.array.ListArrayType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -53,8 +51,7 @@ public class Document {
     @Column(columnDefinition = "text", nullable = false)
     private String contentText;
 
-    @Type(ListArrayType.class)
-    @Column(name = "document_vector", columnDefinition = "vector(1024)")
+    @Column(name = "document_vector", columnDefinition = "float8[]")
     private List<Double> documentVector;
 
     /* 메서드 */
