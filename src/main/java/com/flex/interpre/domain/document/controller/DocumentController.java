@@ -22,7 +22,7 @@ public class DocumentController {
 
     @Operation(summary = "문서 업로드 (multipart/form-data 요청)")
     @PostMapping
-    public ApiResponse<DocumentResponse> uploadDocument(@AuthenticationPrincipal @Parameter(hidden = true) User user, @ModelAttribute DocumentUploadRequest request){
+    public ApiResponse<DocumentResponse> uploadDocument(@AuthenticationPrincipal @Parameter(hidden = true) User user, @RequestPart DocumentUploadRequest request){
         return ApiResponse.ok(documentService.uploadDocument(user, request));
     }
 
