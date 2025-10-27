@@ -21,6 +21,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/recruitments")
@@ -47,21 +49,21 @@ public class RecruitmentController {
     }
 
     @Operation(summary = "공고문 상세 조회")
-    @GetMapping("/{recruitment}")
-    public ApiResponse<RecruitmentResponse> getRecruitment(@PathVariable Recruitment recruitment) {
-        return ApiResponse.ok(recruitmentService.getRecruitment(recruitment));
+    @GetMapping("/{recruitmentId}")
+    public ApiResponse<RecruitmentResponse> getRecruitment(@PathVariable UUID recruitmentId) {
+        return ApiResponse.ok(recruitmentService.getRecruitment(recruitmentId));
     }
 
     @Operation(summary = "공고문 수정")
-    @PutMapping("/{recruitment}")
-    public ApiResponse<RecruitmentResponse> updateRecruitment(@PathVariable Recruitment recruitment, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
-        return ApiResponse.ok(recruitmentService.updateRecruitment(recruitment, request));
+    @PutMapping("/{recruitmentId}")
+    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal @Parameter(hidden = true) User user, @PathVariable UUID recruitmentId, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
+        return ApiResponse.ok(recruitmentService.updateRecruitment(user, recruitmentId, request));
     }
 
     @Operation(summary = "공고문 삭제")
-    @DeleteMapping("/{recruitment}")
-    public ApiResponse<Void> deleteRecruitment(@PathVariable Recruitment recruitment) {
-        recruitmentService.deleteRecruitment(recruitment);
+    @DeleteMapping("/{recruitmentId}")
+    public ApiResponse<Void> deleteRecruitment(@AuthenticationPrincipal @Parameter(hidden = true) User user, @PathVariable UUID recruitmentId) {
+        recruitmentService.deleteRecruitment(user, recruitmentId);
         return ApiResponse.ok();
     }
 }

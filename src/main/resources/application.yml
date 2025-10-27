@@ -43,14 +43,6 @@ spring:
           min-idle: 0
           max-wait: 3000ms
 
-  #    opensearch:
-  #      client:
-  #        username: ${OPENSEARCH_USERNAME}
-  #        password: ${OPENSEARCH_PASSWORD}
-  #        endpoints: ${OPENSEARCH_HOST}:${OPENSEARCH_PORT}
-  #      connection-timeout: 5000
-  #      socket-timeout: 60000
-
   security:
     oauth2:
       client:
@@ -104,3 +96,5 @@ opensearch:
   username: ${OPENSEARCH_USERNAME}
   password: ${OPENSEARCH_PASSWORD}
 
+onboarding:
+  session-ttl: 86400  # 24시간 (초 단위)
