@@ -4,11 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.document.repository.DocumentRepository;
-import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
-import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
-import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
-import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
-import com.flex.interpre.domain.interview.dto.response.SessionResponse;
+import com.flex.interpre.domain.interview.dto.response.*;
 import com.flex.interpre.domain.interview.entity.Competency;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.entity.InterviewChat;
@@ -21,13 +17,6 @@ import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import com.flex.interpre.global.property.BedrockProperty;
 import com.flex.interpre.global.property.ClovaProperty;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -39,6 +28,10 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
+
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -212,6 +205,7 @@ public class InterviewService {
 
             return audioData;
         } catch (Exception e) {
+            e.printStackTrace();
             throw InterviewExceptions.TTS_PROCESSING_FAILED.toException();
         }
     }
