@@ -122,8 +122,6 @@ public class InterviewService {
                             
                             [자기소개서]
                             %s
-                            
-                            첫 질문은 자기소개를 요청하는 질문으로 시작하세요.
                             """.formatted(document)
             ));
         } else {
