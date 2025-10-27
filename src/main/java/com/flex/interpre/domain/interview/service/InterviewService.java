@@ -88,6 +88,7 @@ public class InterviewService {
             return response.text();
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw InterviewExceptions.STT_PROCESSING_FAILED.toException();
         }
     }
@@ -175,6 +176,7 @@ public class InterviewService {
                     .asText();
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw InterviewExceptions.Parsing_Failed.toException();
         }
     }
@@ -352,6 +354,7 @@ public class InterviewService {
                     .build();
 
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("면접 분석 실패: {}", e.getMessage(), e);
             throw InterviewExceptions.Parsing_Failed.toException();
         }
