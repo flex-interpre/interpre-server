@@ -317,6 +317,10 @@ public class InterviewService {
                     .get("text")
                     .asText();
 
+            if (analysisText.startsWith("```")) {
+                analysisText = analysisText.replaceAll("```json?|```", "").trim();
+            }
+
             // JSON 파싱
             JsonNode analysisJson = objectMapper.readTree(analysisText);
 
