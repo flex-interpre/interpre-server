@@ -3,11 +3,7 @@ package com.flex.interpre.global.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
 import com.flex.interpre.domain.interview.dto.response.InterviewResponse;
-import com.flex.interpre.domain.interview.entity.Interview;
-import com.flex.interpre.domain.interview.entity.InterviewChat;
-import com.flex.interpre.domain.interview.entity.InterviewReport;
-import com.flex.interpre.domain.interview.entity.InterviewSession;
-import com.flex.interpre.domain.interview.entity.Qna;
+import com.flex.interpre.domain.interview.entity.*;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewChatRepository;
 import com.flex.interpre.domain.interview.repository.InterviewRepository;
@@ -19,20 +15,6 @@ import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -42,6 +24,17 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -181,6 +174,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         } catch (ApiException e) {
             sendResponse(session, ApiResponse.error(e));
         } catch (Exception e) {
+            e.printStackTrace();
             session.close(CloseStatus.SERVER_ERROR.withReason("질문 생성 중 에러 발생"));
         }
     }
