@@ -50,7 +50,7 @@ public class Recruitment {
     @Column(nullable = false, length = 200)
     private String title;
 
-    @Lob @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     String description;
 
     @Column(name ="deadline")
