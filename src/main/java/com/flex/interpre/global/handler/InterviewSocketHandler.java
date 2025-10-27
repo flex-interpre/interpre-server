@@ -18,6 +18,7 @@ import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -334,7 +335,8 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         return Duration.between(start, LocalDateTime.now()).toMinutes();
     }
 
-    private void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration)
+    @Transactional
+    protected void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration)
             throws IOException {
 
         InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
