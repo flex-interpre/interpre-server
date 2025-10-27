@@ -309,6 +309,9 @@ public class InterviewService {
             InvokeModelResponse response = bedrockRuntimeClient.invokeModel(request);
 
             String responseBody = response.body().asUtf8String();
+
+            System.out.println(responseBody);
+
             JsonNode jsonResponse = objectMapper.readTree(responseBody);
 
             String analysisText = jsonResponse
