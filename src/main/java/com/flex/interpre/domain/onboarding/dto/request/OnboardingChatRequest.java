@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.onboarding.dto;
+package com.flex.interpre.domain.onboarding.dto.request;
 
 import java.util.UUID;
 
