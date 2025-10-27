@@ -11,6 +11,7 @@ import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.interview.repository.QnaRepository;
 import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
+import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
@@ -49,6 +50,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final ConcurrentHashMap<String, List<byte[]>> audioChunksMap = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final RecruitmentIndexService recruitmentIndexService;
+    private final RecruitmentRepository recruitmentRepository;
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
@@ -364,7 +366,12 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
         //면접 분석
         InterviewAnalysisResult analysisResult = interviewService.analyzeInterview(fullTranscript);
-        List<Recruitment> recommendations = recruitmentIndexService.searchByVector(embedding, 3);
+        List<Recruitment> recommendationsFromSearch = recruitmentIndexService.searchByVector(embedding, 3);
+        
+        List<UUID> recommendationIds = recommendationsFromSearch.stream()
+                .map(Recruitment::getId)
+                .toList();
+        List<Recruitment> recommendations = recruitmentRepository.findAllById(recommendationIds);
 
         InterviewReport interviewReport = InterviewReport.builder()
                 .interview(interview)
