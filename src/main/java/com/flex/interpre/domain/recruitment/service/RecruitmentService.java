@@ -5,6 +5,7 @@ import com.flex.interpre.domain.recruitment.dto.request.RecruitmentSearchRequest
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
+import com.flex.interpre.domain.recruitment.exception.RecruitmentExceptions;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.company.entity.Company;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentSpecification;
@@ -103,7 +104,8 @@ public class RecruitmentService {
 
     // 공고문 상세 조회
     @Transactional
-    public RecruitmentResponse getRecruitment(Recruitment recruitment) {
+    public RecruitmentResponse getRecruitment(UUID recruitmentId) {
+        Recruitment recruitment = recruitmentRepository.findById(recruitmentId).orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
         recruitment.increaseViewCount(); // 조회 시 조회수 증가
 
         return RecruitmentResponse.from(recruitment);
@@ -111,8 +113,14 @@ public class RecruitmentService {
 
     // 공고문 업데이트
     @Transactional
-    @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
-    public RecruitmentResponse updateRecruitment(Recruitment recruitment, RecruitmentCreateUpdateRequest request) {
+    @PreAuthorize("hasRole('COMPANY')")
+    public RecruitmentResponse updateRecruitment(User user, UUID recruitmentId, RecruitmentCreateUpdateRequest request) {
+        Recruitment recruitment = recruitmentRepository.findById(recruitmentId).orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
+
+        if (!recruitment.getCompany().getUser().getId().equals(user.getCompany().getUser().getId())) {
+            throw RecruitmentExceptions.ACCESS_DENIED.toException();
+        }
+
         recruitment.update(request); // 공고문 데이터 업데이트
 
         // 인덱싱/임베딩 갱신
@@ -120,7 +128,7 @@ public class RecruitmentService {
             recruitmentIndexService.indexRecruitment(recruitment);
             log.info("공고 인덱스 갱신 완료: {}", recruitment.getId());
         } catch (Exception e) {
-            log.error("공고 인덱스 갱신 실패 ({}): {}", recruitment.getId(), e.getMessage());
+            log.warn("공고 인덱스 갱신 실패 ({}): {}", recruitment.getId(), e.getMessage());
         }
 
         return RecruitmentResponse.from(recruitment);
@@ -128,8 +136,14 @@ public class RecruitmentService {
 
     // 공고문 삭제
     @Transactional
-    @PreAuthorize("hasRole('COMPANY') and #recruitment.company.user.id == authentication.principal.id")
-    public void deleteRecruitment(Recruitment recruitment) {
+    @PreAuthorize("hasRole('COMPANY')")
+    public void deleteRecruitment(User user, UUID recruitmentId) {
+        Recruitment recruitment = recruitmentRepository.findById(recruitmentId).orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
+
+        if (!recruitment.getCompany().getUser().getId().equals(user.getCompany().getUser().getId())) {
+            throw RecruitmentExceptions.ACCESS_DENIED.toException();
+        }
+
         recruitmentRepository.delete(recruitment); // DB에서 삭제
 
         try {
