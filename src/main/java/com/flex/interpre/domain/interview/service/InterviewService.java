@@ -3,6 +3,7 @@ package com.flex.interpre.domain.interview.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.document.entity.Document;
+import com.flex.interpre.domain.document.repository.DocumentRepository;
 import com.flex.interpre.domain.interview.dto.response.ClovaSttResponse;
 import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
 import com.flex.interpre.domain.interview.dto.response.InterviewDetailResponse;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -51,10 +53,14 @@ public class InterviewService {
     private final BedrockRuntimeClient bedrockRuntimeClient;
     private final BedrockProperty bedrockProperty;
     private final ObjectMapper objectMapper;
+    private final DocumentRepository documentRepository;
 
 
     @Transactional
-    public SessionResponse getSessionResponse(User user, Document document) {
+    public SessionResponse getSessionResponse(User user, UUID documentId) {
+
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> InterviewExceptions.DOCUMENT_NOT_FOUND.toException());
 
         Interview interview = interviewRepository.save(Interview.builder()
                 .jobSeeker(user.getJobSeeker())

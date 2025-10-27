@@ -16,7 +16,8 @@ public enum InterviewExceptions implements ApiExceptions {
     Parsing_Failed("Claude 응답 파싱 실패", HttpStatus.BAD_REQUEST),
     TTS_PROCESSING_FAILED("텍스트 음성 변환 실패", HttpStatus.BAD_REQUEST),
     ALREADY_STARTED_INTERVIEW("이미 진행된 인터뷰 입니다", HttpStatus.BAD_REQUEST),
-    INTERNAL_SERVER_ERROR("서버에러", HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL_SERVER_ERROR("서버에러", HttpStatus.INTERNAL_SERVER_ERROR),
+    DOCUMENT_NOT_FOUND("자소사 파일이 없습니다", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus httpStatus;
