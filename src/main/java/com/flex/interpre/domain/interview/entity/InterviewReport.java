@@ -51,7 +51,7 @@ public class InterviewReport {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "ai_feedback")
+    @Column(name = "ai_feedback", columnDefinition = "TEXT")
     private String aiFeedback;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

@@ -37,7 +37,7 @@ public class Company {
     @Column(columnDefinition = "TEXT")
     private String address;
 
-    @Column(length = 255)
+    @Column(columnDefinition = "TEXT")
     private String website;
 
     @Column(columnDefinition = "TEXT")
