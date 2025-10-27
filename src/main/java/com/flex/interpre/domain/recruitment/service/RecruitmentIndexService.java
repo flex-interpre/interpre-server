@@ -4,15 +4,18 @@ import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.index.RecruitmentDocumentIndex;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.query_dsl.KnnQuery;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.IndexResponse;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
-import org.opensearch.client.opensearch._types.query_dsl.KnnQuery;
-import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,7 +83,7 @@ public class RecruitmentIndexService {
     }
 
     // KNN 기반 벡터 검색
-    public List<Map<String, Object>> searchByVector(List<Double> queryVector, int k) throws IOException {
+    public List<Recruitment> searchByVector(List<Double> queryVector, int k) throws IOException {
         float[] vectorArray = new float[queryVector.size()];
         for (int i = 0; i < queryVector.size(); i++) {
             vectorArray[i] = queryVector.get(i).floatValue();
@@ -94,11 +97,14 @@ public class RecruitmentIndexService {
 
         Query query = new Query.Builder().knn(knnQuery).build();
 
-        SearchResponse<Map<String, Object>> response = client.search(s -> s
+        SearchResponse<Recruitment> response = client.search(s -> s
                         .index(INDEX_NAME)
                         .size(k)
-                        .query(query),
-                (Class<Map<String, Object>>) (Class<?>) Map.class
+                        .query(query)
+                        .source(source -> source
+                                .filter(f -> f.excludes("embedding"))  // embedding 필드 제외
+                        ),
+                Recruitment.class
         );
 
         return response.hits().hits().stream()

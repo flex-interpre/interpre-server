@@ -28,6 +28,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+    open-in-view: true
   data:
     redis:
       host: ${REDIS_HOST}
@@ -60,7 +61,7 @@ app:
     refresh-expiration: 720
   oauth2:
     allowed-urls:
-      - http://localhost:3000
+      - http://localhost:3000/auth/callback
   clova:
     id: ${CLOAVA_CLIENT_ID}
     secret: ${CLOAVA_CLIENT_SECRET}
