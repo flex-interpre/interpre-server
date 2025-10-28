@@ -7,7 +7,6 @@ import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +28,7 @@ public class JobSeekerService {
     }
 
     @Transactional
-    public void addBookmark(Recruitment recruitment, @AuthenticationPrincipal User user) {
+    public void addBookmark(Recruitment recruitment, User user) {
 
         JobSeeker jobSeeker = user.getJobSeeker();
 
@@ -38,7 +37,7 @@ public class JobSeekerService {
     }
 
     @Transactional
-    public void deleteBookmark(Recruitment recruitment, @AuthenticationPrincipal User user) {
+    public void deleteBookmark(Recruitment recruitment, User user) {
 
         JobSeeker jobSeeker = user.getJobSeeker();
 
