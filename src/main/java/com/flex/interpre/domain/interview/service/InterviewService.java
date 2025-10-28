@@ -223,7 +223,7 @@ public class InterviewService {
                 .createdAt(interview.getCreatedAt())
                 .title(interview.getTitle())
                 .durationSeconds(interview.getDurationSecond())
-                .qna(interview.getQnas())
+                .qna(interview.getQnas().stream().map(QnaDto::from).toList())
                 .build();
     }
 
@@ -238,7 +238,7 @@ public class InterviewService {
                 .createdAt(updatedInterview.getCreatedAt())
                 .title(updatedInterview.getTitle())
                 .durationSeconds(updatedInterview.getDurationSecond())
-                .qna(updatedInterview.getQnas())
+                .qna(updatedInterview.getQnas().stream().map(QnaDto::from).toList())
                 .build();
     }
 
