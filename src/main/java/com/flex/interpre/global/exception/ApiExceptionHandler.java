@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -51,16 +50,6 @@ public class ApiExceptionHandler {
         String errorMessage = String.format("%s은(는) %s", field, message);
 
         return ApiResponse.error(HttpStatus.BAD_GATEWAY, errorMessage);
-    }
-
-    // DTO 유효성 검증 실패 시 (@RequestBody @Valid 등 에서 감지)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ApiResponse<?> handleValidation(MethodArgumentNotValidException e) {
-        FieldError error = e.getBindingResult().getFieldError();
-//        String field = (error != null) ? error.getField() : "unknown";
-        String message = (error != null && error.getDefaultMessage() != null)
-                ? error.getDefaultMessage() : "잘못된 요청입니다.";
-        return ApiResponse.error(HttpStatus.BAD_REQUEST, message);
     }
 
     // 파라미터 검증 실패 시
