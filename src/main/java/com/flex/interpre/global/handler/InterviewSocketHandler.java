@@ -2,6 +2,7 @@ package com.flex.interpre.global.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
+import com.flex.interpre.domain.interview.dto.response.InterviewReportDto;
 import com.flex.interpre.domain.interview.dto.response.InterviewResponse;
 import com.flex.interpre.domain.interview.entity.*;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
@@ -404,7 +405,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .question(closingMessage)
                 .audio(audioBase64)
                 .questionNumber(interviewSession.getCurrentQuestionNum())
-                .interviewReport(interviewReport)
+                .interviewReport(InterviewReportDto.from(interviewReport))
                 .isFinal(true)
                 .build();
 

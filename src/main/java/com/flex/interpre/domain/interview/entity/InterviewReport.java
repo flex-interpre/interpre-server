@@ -1,6 +1,5 @@
 package com.flex.interpre.domain.interview.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -44,7 +43,6 @@ public class InterviewReport {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @JsonIgnoreProperties({"interview"})
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interview_id")
     private Interview interview;
