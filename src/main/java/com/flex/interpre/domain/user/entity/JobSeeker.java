@@ -25,7 +25,6 @@ import java.util.UUID;
 @Table(name = "job_seekers")
 public class JobSeeker {
     @Id
-    @Getter(AccessLevel.NONE)
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;

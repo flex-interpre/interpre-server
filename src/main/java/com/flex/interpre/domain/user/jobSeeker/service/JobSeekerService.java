@@ -22,7 +22,8 @@ public class JobSeekerService {
     @Transactional(readOnly = true)
     public List<RecruitmentSummaryResponse> getBookmarks(User user) {
 
-        JobSeeker jobSeeker = user.getJobSeeker();
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithBookmarks(user.getJobSeeker().getId())
+                .orElseThrow();
         return jobSeeker.getBookmarkedRecruitments().stream().map(RecruitmentSummaryResponse::from).toList();
 
     }
@@ -30,7 +31,8 @@ public class JobSeekerService {
     @Transactional
     public void addBookmark(Recruitment recruitment, User user) {
 
-        JobSeeker jobSeeker = user.getJobSeeker();
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithBookmarks(user.getJobSeeker().getId())
+                .orElseThrow();
 
         jobSeeker.getBookmarkedRecruitments().add(recruitment);
         jobSeekerRepository.save(jobSeeker);
@@ -39,7 +41,8 @@ public class JobSeekerService {
     @Transactional
     public void deleteBookmark(Recruitment recruitment, User user) {
 
-        JobSeeker jobSeeker = user.getJobSeeker();
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithBookmarks(user.getJobSeeker().getId())
+                .orElseThrow();
 
         jobSeeker.getBookmarkedRecruitments().remove(recruitment);
         jobSeekerRepository.save(jobSeeker);
