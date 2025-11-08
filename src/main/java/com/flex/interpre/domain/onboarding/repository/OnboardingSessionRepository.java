@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface OnboardingSessionRepository extends JpaRepository<OnboardingSession, UUID> {
-    Optional<OnboardingSession> findByUserIdAndCompletedTrue(UUID userId);
+    Optional<OnboardingSession> findByJobSeekerIdAndCompletedTrue(UUID jobSeekerId);
 }

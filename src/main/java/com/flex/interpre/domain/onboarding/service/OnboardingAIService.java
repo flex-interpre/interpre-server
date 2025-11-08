@@ -12,7 +12,6 @@ import com.flex.interpre.domain.onboarding.model.OnboardingSessionCache;
 import com.flex.interpre.domain.onboarding.repository.OnboardingSessionCacheRepository;
 import com.flex.interpre.domain.onboarding.repository.OnboardingSessionRepository;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
-import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
@@ -47,10 +46,10 @@ public class OnboardingAIService {
     @Value("${app.bedrock.model-id}")
     private String modelId;
 
-    public OnboardingChatResponse chat(User user, OnboardingChatRequest request) {
+    public OnboardingChatResponse chat(JobSeeker jobSeeker, OnboardingChatRequest request) {
         // Redis에서 세션 조회 또는 생성
-        OnboardingSessionCache session = cacheRepository.findByUserId(user.getId())
-                .orElseGet(() -> createNewSession(user.getId()));
+        OnboardingSessionCache session = cacheRepository.findByJobSeekerId(jobSeeker.getId())
+                .orElseGet(() -> createNewSession(jobSeeker.getId()));
 
         // 사용자 메시지를 히스토리에 추가
         session.addMessage("user", request.message());
@@ -73,7 +72,7 @@ public class OnboardingAIService {
         if (isCompleted) {
             result = extractResultFromResponse(aiResponse);
             saveToDatabase(session);
-            updateJobSeekerInfo(user, result);
+            updateJobSeekerInfo(jobSeeker, result);
         }
 
         // 사용자에게 보여줄 응답 (특수 태그 제거)
@@ -87,9 +86,9 @@ public class OnboardingAIService {
                 .build();
     }
 
-    private OnboardingSessionCache createNewSession(UUID userId) {
+    private OnboardingSessionCache createNewSession(UUID jobSeekerId) {
         OnboardingSessionCache session = OnboardingSessionCache.builder()
-                .userId(userId.toString())
+                .jobSeekerId(jobSeekerId.toString())
                 .completed(false)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -294,33 +293,33 @@ public class OnboardingAIService {
     }
 
     @Transactional
-    public void confirmSelections(User user, OnboardingConfirmRequest req) {
+    public void confirmSelections(JobSeeker jobSeeker, OnboardingConfirmRequest req) {
         OnboardingResult result = OnboardingResult.builder()
                 .recommendedAreas(req.areas().stream().map(this::convertToAreaEnum).filter(Objects::nonNull).collect(Collectors.toSet()))
                 .recommendedJobFirsts(req.jobFirsts().stream().map(JobFirst::valueOf).collect(Collectors.toSet()))
                 .recommendedJobSeconds(req.jobSeconds().stream().map(JobSecond::valueOf).collect(Collectors.toSet()))
                 .build();
 
-        updateJobSeekerInfo(user, result);
+        updateJobSeekerInfo(jobSeeker, result);
     }
 
     // 채팅 히스토리 조회
-    public List<OnboardingSessionCache.ChatMessage> getChatHistory(User user) {
-        return cacheRepository.findByUserId(user.getId())
+    public List<OnboardingSessionCache.ChatMessage> getChatHistory(JobSeeker jobSeeker) {
+        return cacheRepository.findByJobSeekerId(jobSeeker.getId())
                 .map(OnboardingSessionCache::getMessages)
                 .orElse(Collections.emptyList());
     }
 
     // 세션 초기화 (재시작)
-    public void resetSession(User user) {
-        cacheRepository.delete(user.getId());
-        log.info("온보딩 세션 초기화: userId={}", user.getId());
+    public void resetSession(JobSeeker jobSeeker) {
+        cacheRepository.delete(jobSeeker.getId());
+        log.info("온보딩 세션 초기화: userId={}", jobSeeker.getId());
     }
 
     @Transactional
-    public OnboardingChatResponse handleChoice(User user, OnboardingChoiceRequest request) {
+    public OnboardingChatResponse handleChoice(JobSeeker jobSeeker, OnboardingChoiceRequest request) {
         // 캐시 세션 조회
-        OnboardingSessionCache session = cacheRepository.findByUserId(user.getId())
+        OnboardingSessionCache session = cacheRepository.findByJobSeekerId(jobSeeker.getId())
                 .orElseThrow(() -> new RuntimeException("온보딩 세션을 찾을 수 없습니다."));
 
         // 선택 내용을 자연스러운 문장으로 변환해 LLM에 전달
@@ -343,7 +342,7 @@ public class OnboardingAIService {
         boolean isCompleted = aiResponse.contains("[ONBOARDING_COMPLETE]");
         if (isCompleted) {
             OnboardingResult result = extractResultFromResponse(aiResponse);
-            updateJobSeekerInfo(user, result);
+            updateJobSeekerInfo(jobSeeker, result);
             session.setCompleted(true);
             cacheRepository.save(session);
         }
@@ -452,7 +451,7 @@ public class OnboardingAIService {
         }
 
         OnboardingSession dbSession = OnboardingSession.builder()
-                .userId(UUID.fromString(cache.getUserId()))
+                .jobSeekerId(UUID.fromString(cache.getJobSeekerId()))
                 .currentStep(OnboardingSession.OnboardingStep.COMPLETED)
                 .conversationHistory(conversationHistory.toString())
                 .completed(true)
@@ -461,13 +460,10 @@ public class OnboardingAIService {
                 .build();
 
         sessionRepository.save(dbSession);
-        log.info("온보딩 세션 DB 저장 완료: userId={}", cache.getUserId());
+        log.info("온보딩 세션 DB 저장 완료: userId={}", cache.getJobSeekerId());
     }
 
-    private void updateJobSeekerInfo(User user, OnboardingResult result) {
-        JobSeeker jobSeeker = jobSeekerRepository.findByUserIdWithUser(user.getId())
-                .orElseThrow(() -> new RuntimeException("구직자 정보를 찾을 수 없습니다."));
-
+    private void updateJobSeekerInfo(JobSeeker jobSeeker, OnboardingResult result) {
         jobSeeker.setDesiredAreas(result.recommendedAreas());
         jobSeeker.setJobFirsts(result.recommendedJobFirsts());
         jobSeeker.setJobSeconds(result.recommendedJobSeconds());
@@ -475,7 +471,7 @@ public class OnboardingAIService {
         jobSeekerRepository.save(jobSeeker);
 
         log.info("구직자 온보딩 완료: userId={}, areas={}, jobFirst={}",
-                user.getId(), result.recommendedAreas(), result.recommendedJobFirsts());
+                jobSeeker.getId(), result.recommendedAreas(), result.recommendedJobFirsts());
     }
 
     // 한글 -> 영어 Enum 매핑

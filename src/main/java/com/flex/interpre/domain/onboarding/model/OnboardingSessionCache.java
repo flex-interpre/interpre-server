@@ -1,61 +1,61 @@
 package com.flex.interpre.domain.onboarding.model;
 
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Getter
-@Setter
+@Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class OnboardingSessionCache implements Serializable {
 
-    private String userId;
+    private String jobSeekerId;
 
     @Builder.Default
     private List<ChatMessage> messages = new ArrayList<>();
 
-    private Boolean completed;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @Builder.Default
+    private boolean completed = false;
 
-    @Getter
-    @Setter
-    @Builder
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class ChatMessage implements Serializable {
-        private String role;  // "user" or "assistant"
-        private String content;
-        private LocalDateTime timestamp;
-    }
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime updatedAt;
 
     public void addMessage(String role, String content) {
         if (this.messages == null) {
             this.messages = new ArrayList<>();
         }
-        this.messages.add(ChatMessage.builder()
-                .role(role)
-                .content(content)
-                .timestamp(LocalDateTime.now())
-                .build());
-        this.updatedAt = LocalDateTime.now();
+        this.messages.add(new ChatMessage(role, content));
     }
 
-    // Claude API 형식으로 메시지 변환
     public List<Map<String, String>> getMessagesForClaude() {
-        List<Map<String, String>> claudeMessages = new ArrayList<>();
+        List<Map<String, String>> result = new ArrayList<>();
         for (ChatMessage msg : messages) {
-            claudeMessages.add(Map.of(
-                    "role", msg.getRole(),
-                    "content", msg.getContent()
-            ));
+            Map<String, String> m = new HashMap<>();
+            m.put("role", msg.getRole());
+            m.put("content", msg.getContent());
+            result.add(m);
         }
-        return claudeMessages;
+        return result;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ChatMessage implements Serializable {
+        private String role;
+        private String content;
     }
 }

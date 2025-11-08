@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter
+@Getter @Setter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
