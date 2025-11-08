@@ -6,7 +6,7 @@ import com.flex.interpre.domain.onboarding.dto.request.OnboardingConfirmRequest;
 import com.flex.interpre.domain.onboarding.dto.response.OnboardingChatResponse;
 import com.flex.interpre.domain.onboarding.model.OnboardingSessionCache;
 import com.flex.interpre.domain.onboarding.service.OnboardingAIService;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

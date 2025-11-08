@@ -1,7 +1,7 @@
 package com.flex.interpre.domain.user.dto.request;
 
 
-import com.flex.interpre.domain.user.entity.*;
+import com.flex.interpre.domain.jobSeeker.entity.Education;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
 import com.flex.interpre.global.constant.JobSecond;

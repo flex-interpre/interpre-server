@@ -3,7 +3,7 @@ package com.flex.interpre.domain.user.controller;
 
 import com.flex.interpre.domain.user.dto.request.UserUpdateRequest;
 import com.flex.interpre.domain.user.dto.response.MyUserDetailInfo;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.domain.user.service.UserService;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;

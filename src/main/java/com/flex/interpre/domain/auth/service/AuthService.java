@@ -4,7 +4,7 @@ import com.flex.interpre.domain.auth.dto.response.TokenResponse;
 import com.flex.interpre.domain.auth.entity.RefreshToken;
 import com.flex.interpre.domain.auth.exception.AuthExceptions;
 import com.flex.interpre.domain.auth.repository.RefreshTokenRespository;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.domain.user.repository.UserRepository;
 import com.flex.interpre.global.security.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;

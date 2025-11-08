@@ -6,7 +6,7 @@ import com.flex.interpre.domain.interview.dto.response.InterviewHistory;
 import com.flex.interpre.domain.interview.dto.response.SessionResponse;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.interview.service.InterviewService;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

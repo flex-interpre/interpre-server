@@ -1,9 +1,9 @@
-package com.flex.interpre.domain.user.jobSeeker.controller;
+package com.flex.interpre.domain.jobSeeker.controller;
 
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.user.entity.User;
-import com.flex.interpre.domain.user.jobSeeker.service.JobSeekerService;
+import com.flex.interpre.domain.jobSeeker.entity.User;
+import com.flex.interpre.domain.jobSeeker.service.JobSeekerService;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

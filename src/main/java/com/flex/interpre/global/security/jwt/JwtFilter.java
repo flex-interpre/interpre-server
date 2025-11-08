@@ -1,11 +1,13 @@
 package com.flex.interpre.global.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flex.interpre.domain.user.entity.User;
 import com.flex.interpre.domain.user.exception.UserExceptions;
-import com.flex.interpre.domain.user.repository.UserRepository;
+import com.flex.interpre.domain.user.repository.CompanyRepository;
+import com.flex.interpre.domain.user.repository.JobSeekerRepository;
+import com.flex.interpre.global.constant.Role;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
+import com.flex.interpre.global.security.authentication.AccountPrincipal;
 import com.flex.interpre.global.security.authentication.UserAuthentication;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,7 +27,8 @@ import java.util.UUID;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final JobSeekerRepository jobSeekerRepository;
+    private final CompanyRepository companyRepository;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -39,14 +42,16 @@ public class JwtFilter extends OncePerRequestFilter {
         try{
             if (jwtUtil.validateToken(accessToken)){
                 UUID id = jwtUtil.extractUUID(accessToken);
+                Role role = jwtUtil.extractRole(accessToken);
 
-                User user = userRepository.findById(id).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+                AccountPrincipal principal = findAccount(id, role);
+//                User user = userRepository.findById(id).orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
 
-                if(!user.isApproved()){
+                if(!principal.isApproved()){
                     throw UserExceptions.NOT_APPROVED.toException();
                 }
 
-                UserAuthentication authentication = new UserAuthentication(user);
+                UserAuthentication authentication = new UserAuthentication(principal);
                 authentication.setAuthenticated(true);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
@@ -62,5 +67,17 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request,response);
+    }
+
+    private AccountPrincipal findAccount(UUID id, Role role) {
+        if (role == Role.JOB_SEEKER) {
+            return jobSeekerRepository.findById(id)
+                    .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+        } else if (role == Role.COMPANY) {
+            return companyRepository.findById(id)
+                    .orElseThrow(UserExceptions.USER_NOT_FOUND::toException);
+        } else {
+            throw UserExceptions.USER_NOT_FOUND.toException();
+        }
     }
 }

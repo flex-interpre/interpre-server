@@ -4,7 +4,7 @@ import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
 import com.flex.interpre.domain.document.dto.response.DocumentResponse;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.document.service.DocumentService;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

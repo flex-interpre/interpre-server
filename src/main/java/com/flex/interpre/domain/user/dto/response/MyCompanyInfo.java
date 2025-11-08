@@ -19,8 +19,8 @@ public record MyCompanyInfo(
 ) implements MyUserDetailInfo {
     public static MyCompanyInfo from(@Nonnull Company company) {
         return MyCompanyInfo.builder()
-                .id(company.getUser().getId())
-                .email(company.getUser().getEmail())
+                .id(company.getId())
+                .email(company.getEmail())
                 .companyName(company.getCompanyName())
                 .businessNumber(company.getBusinessNumber())
                 .address(company.getAddress())

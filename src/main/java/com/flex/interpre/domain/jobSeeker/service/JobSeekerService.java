@@ -1,9 +1,9 @@
-package com.flex.interpre.domain.user.jobSeeker.service;
+package com.flex.interpre.domain.jobSeeker.service;
 
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.user.entity.JobSeeker;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

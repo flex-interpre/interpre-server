@@ -5,9 +5,8 @@ import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateR
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentSearchRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
-import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.service.RecruitmentService;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

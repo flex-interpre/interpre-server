@@ -1,7 +1,7 @@
 package com.flex.interpre.domain.document.entity;
 
 import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
-import com.flex.interpre.domain.user.entity.JobSeeker;
+import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

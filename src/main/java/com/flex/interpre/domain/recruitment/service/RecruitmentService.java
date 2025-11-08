@@ -9,7 +9,7 @@ import com.flex.interpre.domain.recruitment.exception.RecruitmentExceptions;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.company.entity.Company;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentSpecification;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

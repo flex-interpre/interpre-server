@@ -9,11 +9,20 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CompanyRepository extends JpaRepository<Company, UUID> {
-    @Query("SELECT c FROM Company c JOIN FETCH c.user u WHERE c.user.id = :id")
-    Optional<Company> findByUserIdWithUser(UUID id);
+    Optional<Company> findByEmail(String email);
+    Optional<Company> findByGoogleId(String googleId);
+    boolean existsByEmail(String email);
 
     @Query("SELECT c FROM Company c LEFT JOIN FETCH c.recruitments r WHERE c.id = :companyId AND (r.active = true OR r IS NULL)")
     Optional<Company> findByIdWithActiveRecruitments(@Param("companyId") UUID companyId);
 
     Optional<Company> findByCompanyName(String companyName);
+
+//    @Query("SELECT c FROM Company c JOIN FETCH c.user u WHERE c.user.id = :id")
+//    Optional<Company> findByUserIdWithUser(UUID id);
+//
+//    @Query("SELECT c FROM Company c LEFT JOIN FETCH c.recruitments r WHERE c.id = :companyId AND (r.active = true OR r IS NULL)")
+//    Optional<Company> findByIdWithActiveRecruitments(@Param("companyId") UUID companyId);
+//
+//    Optional<Company> findByCompanyName(String companyName);
 }
