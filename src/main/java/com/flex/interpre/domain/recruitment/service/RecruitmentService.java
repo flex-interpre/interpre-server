@@ -9,12 +9,10 @@ import com.flex.interpre.domain.recruitment.exception.RecruitmentExceptions;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.company.entity.Company;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentSpecification;
-import com.flex.interpre.domain.jobSeeker.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.domain.Specification;
@@ -34,10 +32,7 @@ public class RecruitmentService {
 
     // 공고문 생성
     @Transactional
-    @PreAuthorize("hasRole('COMPANY')")
-    public RecruitmentResponse createRecruitment(User user, RecruitmentCreateUpdateRequest request) {
-        Company company = user.getCompany(); // 유저로부터 해당 기업 조회
-
+    public RecruitmentResponse createRecruitment(Company company, RecruitmentCreateUpdateRequest request) {
         Recruitment recruitment = Recruitment.create(request, company); // 공고문 생성
         recruitmentRepository.save(recruitment); // DB 저장
 
@@ -105,7 +100,8 @@ public class RecruitmentService {
     // 공고문 상세 조회
     @Transactional
     public RecruitmentResponse getRecruitment(UUID recruitmentId) {
-        Recruitment recruitment = recruitmentRepository.findById(recruitmentId).orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
+        Recruitment recruitment = recruitmentRepository.findById(recruitmentId)
+                .orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
         recruitment.increaseViewCount(); // 조회 시 조회수 증가
 
         return RecruitmentResponse.from(recruitment);
@@ -113,11 +109,12 @@ public class RecruitmentService {
 
     // 공고문 업데이트
     @Transactional
-    @PreAuthorize("hasRole('COMPANY')")
-    public RecruitmentResponse updateRecruitment(User user, UUID recruitmentId, RecruitmentCreateUpdateRequest request) {
-        Recruitment recruitment = recruitmentRepository.findById(recruitmentId).orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
+    public RecruitmentResponse updateRecruitment(Company company, UUID recruitmentId, RecruitmentCreateUpdateRequest request) {
+        Recruitment recruitment = recruitmentRepository.findById(recruitmentId)
+                .orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
 
-        if (!recruitment.getCompany().getUser().getId().equals(user.getCompany().getUser().getId())) {
+        // 소유권 검증 (간소화)
+        if (!recruitment.getCompany().getId().equals(company.getId())) {
             throw RecruitmentExceptions.ACCESS_DENIED.toException();
         }
 
@@ -136,11 +133,12 @@ public class RecruitmentService {
 
     // 공고문 삭제
     @Transactional
-    @PreAuthorize("hasRole('COMPANY')")
-    public void deleteRecruitment(User user, UUID recruitmentId) {
-        Recruitment recruitment = recruitmentRepository.findById(recruitmentId).orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
+    public void deleteRecruitment(Company company, UUID recruitmentId) {
+        Recruitment recruitment = recruitmentRepository.findById(recruitmentId)
+                .orElseThrow(RecruitmentExceptions.RECRUITMENT_NOT_FOUND::toException);
 
-        if (!recruitment.getCompany().getUser().getId().equals(user.getCompany().getUser().getId())) {
+        // 소유권 검증 (간소화)
+        if (!recruitment.getCompany().getId().equals(company.getId())) {
             throw RecruitmentExceptions.ACCESS_DENIED.toException();
         }
 

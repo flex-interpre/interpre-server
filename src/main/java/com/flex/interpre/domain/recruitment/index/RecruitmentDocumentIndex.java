@@ -1,7 +1,6 @@
 package com.flex.interpre.domain.recruitment.index;
 
 import lombok.*;
-import org.springframework.data.annotation.Id;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,8 +13,6 @@ public class RecruitmentDocumentIndex {
 
     private UUID id;           // 공고문 PK
     private CompanyInfo company;
-//    private UUID companyId;    // 회사 PK
-//    private String companyName;
 
     private String title;
     private String description;
