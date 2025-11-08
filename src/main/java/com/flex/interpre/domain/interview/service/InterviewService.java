@@ -13,7 +13,6 @@ import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
-import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.global.property.BedrockProperty;
 import com.flex.interpre.global.property.ClovaProperty;
@@ -50,17 +49,17 @@ public class InterviewService {
 
 
     @Transactional
-    public SessionResponse getSessionResponse(User user, UUID documentId) {
+    public SessionResponse getSessionResponse(JobSeeker jobSeeker, UUID documentId) {
 
         Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> InterviewExceptions.DOCUMENT_NOT_FOUND.toException());
+                .orElseThrow(InterviewExceptions.DOCUMENT_NOT_FOUND::toException);
 
         Interview interview = interviewRepository.save(Interview.builder()
-                .jobSeeker(user.getJobSeeker())
+                .jobSeeker(jobSeeker)
                 .build());
 
         InterviewSession interviewSession = interviewSessionRepository.save(InterviewSession.builder()
-                .userId(user.getId())
+                .jobSeekerId(jobSeeker.getId())
                 .interviewId(interview.getId())
                 .contentText(document.getContentText())
                 .ttl(1)
@@ -208,10 +207,10 @@ public class InterviewService {
     }
 
     @Transactional
-    public List<InterviewHistory> getInterviewHistories(User user) {
+    public List<InterviewHistory> getInterviewHistories(JobSeeker jobSeeker) {
 
-        JobSeeker jobSeeker = jobSeekerRepository.findByUserIdWithInterviews((user.getId()));
-        List<Interview> interviews = jobSeeker.getInterviews();
+        JobSeeker jobSeekerWithInterviews = jobSeekerRepository.findByIdWithInterviews(jobSeeker.getId());
+        List<Interview> interviews = jobSeekerWithInterviews.getInterviews();
         return interviews.stream().map(InterviewHistory::from).toList();
     }
 
