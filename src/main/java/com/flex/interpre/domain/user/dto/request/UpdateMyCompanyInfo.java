@@ -7,5 +7,5 @@ public record UpdateMyCompanyInfo(
         String website,
         String description,
         String logoUrl
-) implements UserUpdateRequest {
+){
 }

@@ -22,7 +22,7 @@ public record MyJobSeekerInfo(
     Set<JobFirst> jobFirsts,
     Set<JobSecond> jobSeconds,
     Set<JobThird> jobThirds
-) implements MyUserDetailInfo {
+){
     public static MyJobSeekerInfo from(@Nonnull JobSeeker jobSeeker) {
         return MyJobSeekerInfo.builder()
                 .id(jobSeeker.getId())

@@ -16,7 +16,7 @@ public record MyCompanyInfo(
         String website,
         String description,
         String logoUrl
-) implements MyUserDetailInfo {
+){
     public static MyCompanyInfo from(@Nonnull Company company) {
         return MyCompanyInfo.builder()
                 .id(company.getId())

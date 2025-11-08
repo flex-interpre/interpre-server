@@ -16,5 +16,5 @@ public record UpdateMyJobSeekerInfo(
         Set<JobFirst> jobFirsts,
         Set<JobSecond> jobSeconds,
         Set<JobThird> jobThirds
-) implements UserUpdateRequest {
+){
 }

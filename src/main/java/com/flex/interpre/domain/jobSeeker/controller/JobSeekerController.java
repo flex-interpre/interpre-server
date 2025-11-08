@@ -1,11 +1,15 @@
 package com.flex.interpre.domain.jobSeeker.controller;
 
+import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.jobSeeker.entity.User;
 import com.flex.interpre.domain.jobSeeker.service.JobSeekerService;
+import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
+import com.flex.interpre.domain.user.dto.response.MyJobSeekerInfo;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,31 +20,44 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/jobseekers")
-@PreAuthorize("isAuthenticated()")
+@PreAuthorize("hasRole('JOB_SEEKER')")
 public class JobSeekerController {
 
     private final JobSeekerService jobSeekerService;
 
-    @GetMapping
-    @Operation(summary = "북마크 조회 api 요청")
-    public ApiResponse<List<RecruitmentSummaryResponse>> getBookmarks(@AuthenticationPrincipal User user) {
-
-        return ApiResponse.ok(jobSeekerService.getBookmarks(user));
+    @GetMapping("/me")
+    @Operation(summary = "내 구직자 정보 조회")
+    public ApiResponse<MyJobSeekerInfo> getMyInfo(
+            @AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker) {
+        return ApiResponse.ok(MyJobSeekerInfo.from(jobSeeker));
     }
 
-    @PostMapping("/{recruitment}")
-    @Operation(summary = "북마크 추가 api")
-    public ApiResponse<Void> addBookmark(@PathVariable Recruitment recruitment, @AuthenticationPrincipal User user) {
+    @PutMapping("/me")
+    @Operation(summary = "내 구직자 정보 수정")
+    public ApiResponse<MyJobSeekerInfo> updateMyInfo(@AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker,
+                                                     @Valid @RequestBody UpdateMyJobSeekerInfo request) {
+        return ApiResponse.ok(jobSeekerService.updateMyInfo(jobSeeker, request));
+    }
 
-        jobSeekerService.addBookmark(recruitment, user);
+    @GetMapping("/bookmarks")
+    @Operation(summary = "북마크 조회 api 요청")
+    public ApiResponse<List<RecruitmentSummaryResponse>> getBookmarks(@AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker) {
+        return ApiResponse.ok(jobSeekerService.getBookmarks(jobSeeker));
+    }
+
+    @PostMapping("/bookmarks/{recruitment}")
+    @Operation(summary = "북마크 추가 api")
+    public ApiResponse<Void> addBookmark(@AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker,
+                                         @PathVariable Recruitment recruitment) {
+        jobSeekerService.addBookmark(jobSeeker, recruitment);
         return ApiResponse.ok();
     }
 
-    @DeleteMapping("/{recruitment}")
+    @DeleteMapping("/bookmarks/{recruitment}")
     @Operation(summary = "북마크 제거 api")
-    public ApiResponse<Void> deleteBookmark(@PathVariable Recruitment recruitment, @AuthenticationPrincipal User user) {
-
-        jobSeekerService.deleteBookmark(recruitment, user);
+    public ApiResponse<Void> deleteBookmark(@AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker,
+                                            @PathVariable Recruitment recruitment) {
+        jobSeekerService.deleteBookmark(jobSeeker, recruitment);
         return ApiResponse.ok();
     }
 }

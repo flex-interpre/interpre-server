@@ -3,7 +3,8 @@ package com.flex.interpre.domain.jobSeeker.service;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
-import com.flex.interpre.domain.jobSeeker.entity.User;
+import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
+import com.flex.interpre.domain.user.dto.response.MyJobSeekerInfo;
 import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,36 +17,38 @@ import java.util.List;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('JOB_SEEKER')")
 public class JobSeekerService {
-
     private final JobSeekerRepository jobSeekerRepository;
 
+    @Transactional
+    public MyJobSeekerInfo updateMyInfo(JobSeeker jobSeeker, UpdateMyJobSeekerInfo request) {
+        jobSeeker.update(request);
+
+        return MyJobSeekerInfo.from(jobSeeker);
+    }
+
     @Transactional(readOnly = true)
-    public List<RecruitmentSummaryResponse> getBookmarks(User user) {
-
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithBookmarks(user.getJobSeeker().getId())
+    public List<RecruitmentSummaryResponse> getBookmarks(JobSeeker jobSeeker) {
+        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
                 .orElseThrow();
-        return jobSeeker.getBookmarkedRecruitments().stream().map(RecruitmentSummaryResponse::from).toList();
 
+        return jobSeekerWithBookmarks.getBookmarkedRecruitments().stream().map(RecruitmentSummaryResponse::from).toList();
     }
 
     @Transactional
-    public void addBookmark(Recruitment recruitment, User user) {
-
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithBookmarks(user.getJobSeeker().getId())
+    public void addBookmark(JobSeeker jobSeeker, Recruitment recruitment) {
+        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
                 .orElseThrow();
 
-        jobSeeker.getBookmarkedRecruitments().add(recruitment);
-        jobSeekerRepository.save(jobSeeker);
+        jobSeekerWithBookmarks.getBookmarkedRecruitments().add(recruitment);
+        jobSeekerRepository.save(jobSeekerWithBookmarks);
     }
 
     @Transactional
-    public void deleteBookmark(Recruitment recruitment, User user) {
-
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithBookmarks(user.getJobSeeker().getId())
+    public void deleteBookmark(JobSeeker jobSeeker, Recruitment recruitment) {
+        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
                 .orElseThrow();
 
-        jobSeeker.getBookmarkedRecruitments().remove(recruitment);
-        jobSeekerRepository.save(jobSeeker);
+        jobSeekerWithBookmarks.getBookmarkedRecruitments().remove(recruitment);
+        jobSeekerRepository.save(jobSeekerWithBookmarks);
     }
-
 }
