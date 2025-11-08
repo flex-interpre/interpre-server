@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.exception;
+package com.flex.interpre.global.security.exception;
 
 import com.flex.interpre.global.exception.ApiExceptions;
 import lombok.Getter;

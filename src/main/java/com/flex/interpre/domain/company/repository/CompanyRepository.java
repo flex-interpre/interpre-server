@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.repository;
+package com.flex.interpre.domain.company.repository;
 
 import com.flex.interpre.domain.company.entity.Company;
 import org.springframework.data.jpa.repository.JpaRepository;

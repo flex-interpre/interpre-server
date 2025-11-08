@@ -1,7 +1,7 @@
 package com.flex.interpre.domain.company.entity;
 
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.user.dto.request.UpdateMyCompanyInfo;
+import com.flex.interpre.domain.company.dto.UpdateMyCompanyInfo;
 import com.flex.interpre.global.constant.Role;
 import com.flex.interpre.global.security.authentication.AccountPrincipal;
 import jakarta.persistence.*;

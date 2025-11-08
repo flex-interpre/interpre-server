@@ -27,7 +27,7 @@ public record CompanyDetailResponse(
                 .collect(Collectors.toList());
 
         return CompanyDetailResponse.builder()
-                .id(company.getUser().getId())
+                .id(company.getId())
                 .companyName(company.getCompanyName())
                 .logoUrl(company.getLogoUrl())
                 .description(company.getDescription())

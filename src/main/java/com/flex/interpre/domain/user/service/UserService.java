@@ -1,16 +1,16 @@
 //package com.flex.interpre.domain.user.service;
 //
-//import com.flex.interpre.domain.user.dto.request.UpdateMyCompanyInfo;
-//import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
+//import com.flex.interpre.domain.company.dto.UpdateMyCompanyInfo;
+//import com.flex.interpre.domain.jobSeeker.dto.UpdateMyJobSeekerInfo;
 //import com.flex.interpre.domain.user.dto.request.UserUpdateRequest;
-//import com.flex.interpre.domain.user.dto.response.MyCompanyInfo;
-//import com.flex.interpre.domain.user.dto.response.MyJobSeekerInfo;
+//import com.flex.interpre.domain.company.dto.MyCompanyInfo;
+//import com.flex.interpre.domain.jobSeeker.dto.MyJobSeekerInfo;
 //import com.flex.interpre.domain.user.dto.response.MyUserDetailInfo;
 //import com.flex.interpre.domain.company.entity.Company;
 //import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 //import com.flex.interpre.domain.jobSeeker.entity.User;
 //import com.flex.interpre.domain.user.exception.UserExceptions;
-//import com.flex.interpre.domain.user.repository.CompanyRepository;
+//import com.flex.interpre.domain.company.repository.CompanyRepository;
 //import com.flex.interpre.domain.user.repository.JobSeekerRepository;
 //import lombok.RequiredArgsConstructor;
 //import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.repository;
+package com.flex.interpre.domain.jobSeeker.repository;
 
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import java.util.Optional;

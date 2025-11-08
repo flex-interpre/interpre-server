@@ -13,7 +13,7 @@ import com.flex.interpre.domain.onboarding.repository.OnboardingSessionCacheRepo
 import com.flex.interpre.domain.onboarding.repository.OnboardingSessionRepository;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.entity.User;
-import com.flex.interpre.domain.user.repository.JobSeekerRepository;
+import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
 import com.flex.interpre.global.constant.JobSecond;

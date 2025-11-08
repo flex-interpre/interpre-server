@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.dto.request;
+package com.flex.interpre.domain.jobSeeker.dto;
 
 
 import com.flex.interpre.domain.jobSeeker.entity.Education;

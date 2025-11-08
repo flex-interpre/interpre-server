@@ -3,7 +3,7 @@ package com.flex.interpre.domain.jobSeeker.entity;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.interview.entity.Interview;
-import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
+import com.flex.interpre.domain.jobSeeker.dto.UpdateMyJobSeekerInfo;
 import com.flex.interpre.global.constant.*;
 import com.flex.interpre.global.security.authentication.AccountPrincipal;
 import jakarta.persistence.*;

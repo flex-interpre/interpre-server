@@ -1,9 +1,9 @@
 package com.flex.interpre.global.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flex.interpre.domain.user.exception.UserExceptions;
-import com.flex.interpre.domain.user.repository.CompanyRepository;
-import com.flex.interpre.domain.user.repository.JobSeekerRepository;
+import com.flex.interpre.global.security.exception.UserExceptions;
+import com.flex.interpre.domain.company.repository.CompanyRepository;
+import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.global.constant.Role;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;

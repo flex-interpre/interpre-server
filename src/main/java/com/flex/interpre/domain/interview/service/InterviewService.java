@@ -14,7 +14,7 @@ import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.entity.User;
-import com.flex.interpre.domain.user.repository.JobSeekerRepository;
+import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.global.property.BedrockProperty;
 import com.flex.interpre.global.property.ClovaProperty;
 import lombok.RequiredArgsConstructor;

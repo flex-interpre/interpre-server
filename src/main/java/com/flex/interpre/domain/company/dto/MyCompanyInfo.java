@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.dto.response;
+package com.flex.interpre.domain.company.dto;
 
 import com.flex.interpre.domain.company.entity.Company;
 import jakarta.annotation.Nonnull;
