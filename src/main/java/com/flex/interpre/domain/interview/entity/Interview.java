@@ -1,6 +1,6 @@
 package com.flex.interpre.domain.interview.entity;
 
-import com.flex.interpre.domain.user.entity.JobSeeker;
+import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

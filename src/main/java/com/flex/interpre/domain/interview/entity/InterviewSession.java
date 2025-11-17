@@ -19,7 +19,7 @@ public class InterviewSession {
     @Builder.Default
     private UUID id = UUID.randomUUID();
 
-    private UUID userId;
+    private UUID jobSeekerId;
 
     private UUID interviewId;
 

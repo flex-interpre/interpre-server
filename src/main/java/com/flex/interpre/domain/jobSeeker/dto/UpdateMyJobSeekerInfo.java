@@ -1,7 +1,7 @@
-package com.flex.interpre.domain.user.dto.request;
+package com.flex.interpre.domain.jobSeeker.dto;
 
 
-import com.flex.interpre.domain.user.entity.*;
+import com.flex.interpre.domain.jobSeeker.entity.Education;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
 import com.flex.interpre.global.constant.JobSecond;
@@ -16,5 +16,5 @@ public record UpdateMyJobSeekerInfo(
         Set<JobFirst> jobFirsts,
         Set<JobSecond> jobSeconds,
         Set<JobThird> jobThirds
-) implements UserUpdateRequest {
+){
 }

@@ -2,7 +2,6 @@ package com.flex.interpre.domain.recruitment.service;
 
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.index.RecruitmentDocumentIndex;
-import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import java.io.IOException;
 import java.util.List;
@@ -17,13 +16,8 @@ import org.opensearch.client.opensearch.core.IndexResponse;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -44,7 +38,7 @@ public class RecruitmentIndexService {
         RecruitmentDocumentIndex doc = RecruitmentDocumentIndex.builder()
                 .id(recruitment.getId())
                 .company(RecruitmentDocumentIndex.CompanyInfo.builder()
-                        .id(recruitment.getCompany().getUser().getId())
+                        .id(recruitment.getCompany().getId())
                         .companyName(recruitment.getCompany().getCompanyName())
                         .build())
                 .title(recruitment.getTitle())

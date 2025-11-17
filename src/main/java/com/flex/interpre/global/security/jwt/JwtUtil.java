@@ -7,7 +7,7 @@ import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.flex.interpre.domain.auth.entity.RefreshToken;
 import com.flex.interpre.domain.auth.exception.AuthExceptions;
 import com.flex.interpre.domain.auth.repository.RefreshTokenRespository;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.global.constant.Role;
 import com.flex.interpre.global.property.JwtProperty;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -74,28 +74,46 @@ public class JwtUtil {
         );
     }
 
-    public String generateToken(User user) {
+    public Role extractRole(String token) {
+        String roleStr = JWT.require(algorithm())
+                .build()
+                .verify(token)
+                .getClaim("role")
+                .asString();
+
+        return Role.valueOf(roleStr);
+    }
+
+    public String generateToken(UUID id, Role role) {
         return JWT.create()
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(jwtProperty.getTokenExpiration(), ChronoUnit.HOURS))
-                .withClaim("id", user.getId().toString())
-                .withClaim("role", user.getRole().name())
+                .withClaim("id", id.toString())
+                .withClaim("role", role.name())
                 .withClaim("type", TokenType.ACCESS.name())
                 .sign(algorithm());
     }
+//    public String generateToken(User user) {
+//        return JWT.create()
+//                .withIssuedAt(Instant.now())
+//                .withExpiresAt(Instant.now().plus(jwtProperty.getTokenExpiration(), ChronoUnit.HOURS))
+//                .withClaim("id", user.getId().toString())
+//                .withClaim("role", user.getRole().name())
+//                .withClaim("type", TokenType.ACCESS.name())
+//                .sign(algorithm());
+//    }
 
-    public String generateRefreshToken(User user) {
-
+    public String generateRefreshToken(UUID id, Role role) {
         String token = JWT.create()
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(jwtProperty.getRefreshExpiration(), ChronoUnit.HOURS))
-                .withClaim("id", user.getId().toString())
-                .withClaim("role", user.getRole().name())
+                .withClaim("id", id.toString())
+                .withClaim("role", role.name())
                 .withClaim("type", TokenType.REFRESH.name())
                 .sign(algorithm());
 
         RefreshToken refreshToken = RefreshToken.builder()
-                .userId(user.getId())
+                .userId(id)
                 .refreshToken(token)
                 .ttl(jwtProperty.getRefreshExpiration())
                 .build();

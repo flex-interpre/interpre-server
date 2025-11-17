@@ -4,8 +4,7 @@ import com.flex.interpre.domain.document.dto.request.DocumentUploadRequest;
 import com.flex.interpre.domain.document.dto.response.DocumentResponse;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.document.repository.DocumentRepository;
-import com.flex.interpre.domain.user.entity.JobSeeker;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import com.flex.interpre.global.module.pdf.PdfExtractor;
 import com.flex.interpre.global.module.s3.S3DocumentUploader;
@@ -32,9 +31,7 @@ public class DocumentService {
 
     @Transactional
     @PreAuthorize("hasRole('JOB_SEEKER')")
-    public DocumentResponse uploadDocument(User user, DocumentUploadRequest request){
-        JobSeeker jobSeeker = user.getJobSeeker();
-
+    public DocumentResponse uploadDocument(JobSeeker jobSeeker, DocumentUploadRequest request){
         String fileUrl = s3Uploader.uploadDocument(request.file(), DIR_NAME); // s3 저장 후 url
         String extractedText = pdfExtractor.extract(request.file()); // pdf -> text로 변환
         List<Double> embedding = clovaEmbeddingService.embed(extractedText); // text -> embedding
@@ -46,17 +43,14 @@ public class DocumentService {
         return DocumentResponse.from(document);
     }
 
-    public List<DocumentResponse> getDocuments(User user) {
-        JobSeeker jobSeeker = user.getJobSeeker();
-        if (jobSeeker == null) return List.of();
-
-        return documentRepository.findAllByJobSeekerUserIdAndDeletedAtIsNull(jobSeeker.getUser().getId()).stream()
+    public List<DocumentResponse> getDocuments(JobSeeker jobSeeker) {
+        return documentRepository.findAllByJobSeekerIdAndDeletedAtIsNull(jobSeeker.getId()).stream()
                 .map(DocumentResponse::from)
                 .toList();
     }
 
     @Transactional
-    @PreAuthorize("hasRole('JOB_SEEKER') and #document.jobSeeker.user.id == authentication.principal.id")
+    @PreAuthorize("hasRole('JOB_SEEKER') and #document.jobSeeker.id == authentication.principal.id")
     public void deleteDocument(Document document) {
         s3Uploader.deleteDocument(document.getFileUrl()); // S3에서 파일 삭제
 

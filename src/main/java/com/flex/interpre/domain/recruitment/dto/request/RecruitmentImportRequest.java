@@ -1,6 +1,5 @@
 package com.flex.interpre.domain.recruitment.dto.request;
 
-import com.flex.interpre.global.constant.*;
 import lombok.Builder;
 
 import java.time.LocalDateTime;

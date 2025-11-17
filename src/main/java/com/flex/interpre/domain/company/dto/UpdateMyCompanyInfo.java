@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.dto.request;
+package com.flex.interpre.domain.company.dto;
 
 
 public record UpdateMyCompanyInfo(
@@ -7,5 +7,5 @@ public record UpdateMyCompanyInfo(
         String website,
         String description,
         String logoUrl
-) implements UserUpdateRequest {
+){
 }

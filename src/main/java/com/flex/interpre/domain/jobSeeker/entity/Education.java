@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.entity;
+package com.flex.interpre.domain.jobSeeker.entity;
 
 public enum Education {
     초등학교_졸업,

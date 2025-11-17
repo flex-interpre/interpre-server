@@ -28,18 +28,18 @@ public class OnboardingSessionCacheRepository {
 
     private static final String KEY_PREFIX = "onboarding:session:";
 
-    private String getKey(UUID userId) {
-        return KEY_PREFIX + userId.toString();
+    private String getKey(UUID jobSeekerId) {
+        return KEY_PREFIX + jobSeekerId.toString();
     }
 
     public void save(OnboardingSessionCache session) {
-        String key = getKey(UUID.fromString(session.getUserId()));
+        String key = getKey(UUID.fromString(session.getJobSeekerId()));
         session.setUpdatedAt(LocalDateTime.now());
         redisTemplate.opsForValue().set(key, session, sessionTtl, TimeUnit.SECONDS);
     }
 
-    public Optional<OnboardingSessionCache> findByUserId(UUID userId) {
-        String key = getKey(userId);
+    public Optional<OnboardingSessionCache> findByJobSeekerId(UUID jobSeekerId) {
+        String key = getKey(jobSeekerId);
         Object value = redisTemplate.opsForValue().get(key);
 
         if (value == null) return Optional.empty();
@@ -48,18 +48,18 @@ public class OnboardingSessionCacheRepository {
         return Optional.of(session);
     }
 
-    public void delete(UUID userId) {
-        String key = getKey(userId);
+    public void delete(UUID jobSeekerId) {
+        String key = getKey(jobSeekerId);
         redisTemplate.delete(key);
     }
 
-    public boolean exists(UUID userId) {
-        String key = getKey(userId);
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    public boolean exists(UUID jobSeekerId) {
+        String key = getKey(jobSeekerId);
+        return redisTemplate.hasKey(key);
     }
 
-    public void refreshTtl(UUID userId) {
-        String key = getKey(userId);
+    public void refreshTtl(UUID jobSeekerId) {
+        String key = getKey(jobSeekerId);
         redisTemplate.expire(key, sessionTtl, TimeUnit.SECONDS);
     }
 }

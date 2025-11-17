@@ -1,6 +1,7 @@
-package com.flex.interpre.domain.user.dto.response;
+package com.flex.interpre.domain.jobSeeker.dto;
 
-import com.flex.interpre.domain.user.entity.*;
+import com.flex.interpre.domain.jobSeeker.entity.Education;
+import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.global.constant.Area;
 import com.flex.interpre.global.constant.JobFirst;
 import com.flex.interpre.global.constant.JobSecond;
@@ -21,11 +22,11 @@ public record MyJobSeekerInfo(
     Set<JobFirst> jobFirsts,
     Set<JobSecond> jobSeconds,
     Set<JobThird> jobThirds
-) implements MyUserDetailInfo {
+){
     public static MyJobSeekerInfo from(@Nonnull JobSeeker jobSeeker) {
         return MyJobSeekerInfo.builder()
-                .id(jobSeeker.getUser().getId())
-                .email(jobSeeker.getUser().getEmail())
+                .id(jobSeeker.getId())
+                .email(jobSeeker.getEmail())
                 .name(jobSeeker.getName())
                 .education(jobSeeker.getEducation())
                 .desiredAreas(jobSeeker.getDesiredAreas())

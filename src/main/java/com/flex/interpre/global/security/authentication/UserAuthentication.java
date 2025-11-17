@@ -1,6 +1,5 @@
 package com.flex.interpre.global.security.authentication;
 
-import com.flex.interpre.domain.user.entity.User;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -14,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserAuthentication implements Authentication {
 
-    private final User user;
+    private final AccountPrincipal principal;
 
     @Getter
     @Setter
@@ -23,7 +22,7 @@ public class UserAuthentication implements Authentication {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
 
-        String role = "ROLE_" + user.getRole().name();
+        String role = "ROLE_" + principal.getRole().name();
         return List.of(new SimpleGrantedAuthority(role));
     }
 
@@ -39,9 +38,8 @@ public class UserAuthentication implements Authentication {
 
     @Override
     public Object getPrincipal() {
-        return user;
+        return principal;
     }
-
 
     @Override
     public String getName() {

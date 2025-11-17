@@ -1,13 +1,11 @@
 package com.flex.interpre.domain.recruitment.controller;
 
-
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentCreateUpdateRequest;
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentSearchRequest;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentResponse;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
-import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.service.RecruitmentService;
-import com.flex.interpre.domain.user.entity.User;
+import com.flex.interpre.domain.company.entity.Company;
 import com.flex.interpre.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,11 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
-
 
 @RestController
 @RequestMapping("/recruitments")
@@ -32,8 +30,10 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 생성")
     @PostMapping
-    public ApiResponse<RecruitmentResponse> create(@AuthenticationPrincipal @Parameter(hidden = true) User user, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
-        return ApiResponse.ok(recruitmentService.createRecruitment(user, request));
+    @PreAuthorize("hasRole('COMPANY')")
+    public ApiResponse<RecruitmentResponse> create(@AuthenticationPrincipal @Parameter(hidden = true) Company company,
+                                                   @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
+        return ApiResponse.ok(recruitmentService.createRecruitment(company, request));
     }
 
     @Operation(summary = "공고문 전체 조회")
@@ -56,14 +56,18 @@ public class RecruitmentController {
 
     @Operation(summary = "공고문 수정")
     @PutMapping("/{recruitmentId}")
-    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal @Parameter(hidden = true) User user, @PathVariable UUID recruitmentId, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
-        return ApiResponse.ok(recruitmentService.updateRecruitment(user, recruitmentId, request));
+    @PreAuthorize("hasRole('COMPANY')")
+    public ApiResponse<RecruitmentResponse> updateRecruitment(@AuthenticationPrincipal @Parameter(hidden = true) Company company,
+                                                              @PathVariable UUID recruitmentId, @Valid @RequestBody RecruitmentCreateUpdateRequest request) {
+        return ApiResponse.ok(recruitmentService.updateRecruitment(company, recruitmentId, request));
     }
 
     @Operation(summary = "공고문 삭제")
     @DeleteMapping("/{recruitmentId}")
-    public ApiResponse<Void> deleteRecruitment(@AuthenticationPrincipal @Parameter(hidden = true) User user, @PathVariable UUID recruitmentId) {
-        recruitmentService.deleteRecruitment(user, recruitmentId);
+    @PreAuthorize("hasRole('COMPANY')")
+    public ApiResponse<Void> deleteRecruitment(@AuthenticationPrincipal @Parameter(hidden = true) Company company,
+                                               @PathVariable UUID recruitmentId) {
+        recruitmentService.deleteRecruitment(company, recruitmentId);
         return ApiResponse.ok();
     }
 }

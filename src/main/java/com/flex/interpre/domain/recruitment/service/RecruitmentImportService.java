@@ -1,7 +1,7 @@
 package com.flex.interpre.domain.recruitment.service;
 
 import com.flex.interpre.domain.company.entity.Company;
-import com.flex.interpre.domain.user.repository.CompanyRepository;
+import com.flex.interpre.domain.company.repository.CompanyRepository;
 import com.flex.interpre.domain.recruitment.dto.request.RecruitmentImportRequest;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;

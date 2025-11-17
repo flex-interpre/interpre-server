@@ -1,4 +1,4 @@
-package com.flex.interpre.domain.user.dto.response;
+package com.flex.interpre.domain.company.dto;
 
 import com.flex.interpre.domain.company.entity.Company;
 import jakarta.annotation.Nonnull;
@@ -16,11 +16,11 @@ public record MyCompanyInfo(
         String website,
         String description,
         String logoUrl
-) implements MyUserDetailInfo {
+){
     public static MyCompanyInfo from(@Nonnull Company company) {
         return MyCompanyInfo.builder()
-                .id(company.getUser().getId())
-                .email(company.getUser().getEmail())
+                .id(company.getId())
+                .email(company.getEmail())
                 .companyName(company.getCompanyName())
                 .businessNumber(company.getBusinessNumber())
                 .address(company.getAddress())

@@ -1,37 +1,65 @@
-package com.flex.interpre.domain.user.entity;
+package com.flex.interpre.domain.jobSeeker.entity;
 
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.interview.entity.Interview;
-import com.flex.interpre.domain.user.dto.request.UpdateMyJobSeekerInfo;
-import com.flex.interpre.global.constant.Area;
-import com.flex.interpre.global.constant.JobFirst;
-import com.flex.interpre.global.constant.JobSecond;
-import com.flex.interpre.global.constant.JobThird;
+import com.flex.interpre.domain.jobSeeker.dto.UpdateMyJobSeekerInfo;
+import com.flex.interpre.global.constant.*;
+import com.flex.interpre.global.security.authentication.AccountPrincipal;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
+@Getter @Setter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "job_seekers")
-public class JobSeeker {
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "job_seekers", indexes = {
+        @Index(name = "idx_email", columnList = "email"),
+        @Index(name = "idx_google_id", columnList = "google_id")
+})
+public class JobSeeker implements AccountPrincipal {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(nullable = false, updatable = false, columnDefinition = "uuid")
     private UUID id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    // 공통 필드
+
+    @Column(nullable = false, length = 255, unique = true)
+    private String email;
+
+    @Column(name = "google_id", length = 255, unique = true) // 다른 소셜 로그인 고려 nullable
+    private String googleId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @Column(name = "is_approved", nullable = false)
+    @Builder.Default
+    private boolean approved = true;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+
+    // 구직자 필드
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -74,6 +102,13 @@ public class JobSeeker {
     @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
     private Set<Document> documents = new HashSet<>();
 
+
+    // 구직자 메서드
+
+    // 인증용 role 반환
+    public Role getRole() {
+        return Role.JOB_SEEKER;
+    }
 
     // 구직자 정보 수정 메서드
     public void update(UpdateMyJobSeekerInfo request) {
