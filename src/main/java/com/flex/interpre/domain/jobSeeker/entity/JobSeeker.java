@@ -25,8 +25,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "job_seekers", indexes = {
-        @Index(name = "idx_email", columnList = "email"),
-        @Index(name = "idx_google_id", columnList = "google_id")
+        @Index(name = "idx_job_seeker_email", columnList = "email"),
+        @Index(name = "idx_job_seeker_google_id", columnList = "google_id")
 })
 public class JobSeeker implements AccountPrincipal {
     @Id
