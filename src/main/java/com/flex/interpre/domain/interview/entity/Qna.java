@@ -10,6 +10,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED, staticName = "of")
+@Table(name= "qnas")
 public class Qna {
 
     @Id
