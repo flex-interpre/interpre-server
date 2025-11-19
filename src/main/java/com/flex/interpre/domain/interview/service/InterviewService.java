@@ -36,7 +36,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class InterviewService {
-
+    
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewRepository interviewRepository;
     private final JobSeekerRepository jobSeekerRepository;
@@ -46,18 +46,18 @@ public class InterviewService {
     private final BedrockProperty bedrockProperty;
     private final ObjectMapper objectMapper;
     private final DocumentRepository documentRepository;
-
-
+    
+    
     @Transactional
     public SessionResponse getSessionResponse(JobSeeker jobSeeker, UUID documentId) {
-
+        
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(InterviewExceptions.DOCUMENT_NOT_FOUND::toException);
-
+        
         Interview interview = interviewRepository.save(Interview.builder()
                 .jobSeeker(jobSeeker)
                 .build());
-
+        
         InterviewSession interviewSession = interviewSessionRepository.save(InterviewSession.builder()
                 .jobSeekerId(jobSeeker.getId())
                 .interviewId(interview.getId())
@@ -66,9 +66,9 @@ public class InterviewService {
                 .build());
         return new SessionResponse(interviewSession.getId());
     }
-
+    
     public String transcribe(byte[] audioData) {
-
+        
         try {
             ClovaSttResponse response = webClient.post()
                     .uri(clovaProperty.getSttUrl() + "?lang=Kor")
@@ -80,19 +80,19 @@ public class InterviewService {
                     .bodyToMono(ClovaSttResponse.class)
                     .timeout(Duration.ofSeconds(30))
                     .block();
-
+            
             if (response == null || response.text() == null || response.text().isEmpty()) {
                 throw InterviewExceptions.STT_NO_RESULT.toException();
             }
             return response.text();
-
+            
         } catch (Exception e) {
             throw InterviewExceptions.STT_PROCESSING_FAILED.toException();
         }
     }
-
+    
     public String generateQuestions(String document, List<InterviewChat> chatHistory) {
-
+        
         String systemPrompt = """
                 당신은 기술 면접관입니다.
                 
@@ -106,9 +106,9 @@ public class InterviewService {
                 
                 출력: 질문만 작성하고 다른 설명은 생략하세요.
                 """;
-
+        
         List<Map<String, Object>> messages = new ArrayList<>();
-
+        
         // 인터뷰 기록이 없는 경우 첫 질문
         if (chatHistory.isEmpty()) {
             messages.add(Map.of(
@@ -124,12 +124,12 @@ public class InterviewService {
             // 히스토리 추가
             for (InterviewChat chat : chatHistory) {
                 messages.add(Map.of("role", "assistant", "content", chat.getQuestion()));
-
+                
                 if (chat.getAnswer() != null && !chat.getAnswer().isBlank()) {
                     messages.add(Map.of("role", "user", "content", chat.getAnswer()));
                 }
             }
-
+            
             messages.add(Map.of(
                     "role", "user",
                     "content", """
@@ -140,7 +140,7 @@ public class InterviewService {
                             """.formatted(document)
             ));
         }
-
+        
         Map<String, Object> payloadMap = Map.of(
                 "anthropic_version", "bedrock-2023-05-31",
                 "max_tokens", 400,
@@ -148,36 +148,36 @@ public class InterviewService {
                 "system", systemPrompt,
                 "messages", messages
         );
-
+        
         try {
-
+            
             String payload = objectMapper.writeValueAsString(payloadMap);
-
+            
             InvokeModelRequest request = InvokeModelRequest.builder()
                     .modelId(bedrockProperty.getModelId())
                     .body(SdkBytes.fromString(payload, StandardCharsets.UTF_8))
                     .contentType("application/json")
                     .accept("application/json")
                     .build();
-
+            
             InvokeModelResponse response = bedrockRuntimeClient.invokeModel(request);
-
+            
             String responseBody = response.body().asUtf8String();
             JsonNode jsonResponse = objectMapper.readTree(responseBody);
-
+            
             return jsonResponse
                     .get("content")
                     .get(0)
                     .get("text")
                     .asText();
-
+            
         } catch (Exception e) {
             throw InterviewExceptions.Parsing_Failed.toException();
         }
     }
-
+    
     public byte[] tts(String text) {
-
+        
         try {
             byte[] audioData = webClient.post()
                     .uri(clovaProperty.getTtsUrl())
@@ -199,24 +199,24 @@ public class InterviewService {
                     .bodyToMono(byte[].class)
                     .timeout(Duration.ofSeconds(30))
                     .block();
-
+            
             return audioData;
         } catch (Exception e) {
             throw InterviewExceptions.TTS_PROCESSING_FAILED.toException();
         }
     }
-
+    
     @Transactional
     public List<InterviewHistory> getInterviewHistories(JobSeeker jobSeeker) {
-
+        
         JobSeeker jobSeekerWithInterviews = jobSeekerRepository.findByIdWithInterviews(jobSeeker.getId());
         List<Interview> interviews = jobSeekerWithInterviews.getInterviews();
         return interviews.stream().map(InterviewHistory::from).toList();
     }
-
+    
     @Transactional
     public InterviewDetailResponse getInterviewHistoryDetail(Interview interview) {
-
+        
         return InterviewDetailResponse.builder()
                 .id(interview.getId())
                 .createdAt(interview.getCreatedAt())
@@ -225,13 +225,13 @@ public class InterviewService {
                 .qna(interview.getQnas().stream().map(QnaDto::from).toList())
                 .build();
     }
-
+    
     @Transactional
     public InterviewDetailResponse updateInterviewTitle(Interview interview, String title) {
-
+        
         interview.setTitle(title);
         Interview updatedInterview = interviewRepository.save(interview);
-
+        
         return InterviewDetailResponse.builder()
                 .id(updatedInterview.getId())
                 .createdAt(updatedInterview.getCreatedAt())
@@ -240,10 +240,10 @@ public class InterviewService {
                 .qna(updatedInterview.getQnas().stream().map(QnaDto::from).toList())
                 .build();
     }
-
+    
     @Transactional
     public InterviewAnalysisResult analyzeInterview(String fullTranscript) {
-
+        
         String systemPrompt = """
                 당신은 전문 면접 평가자입니다.
                 
@@ -251,12 +251,12 @@ public class InterviewService {
                 1. 강점 (구체적으로 3개)
                 2. 약점 (개선이 필요한 부분 3개)
                 3. 전체 AI 피드백 (적당한 양의 종합적인 평가와 조언)
-                4. 5가지 역량별 점수 (0-100점)
-                   - PROBLEM_SOLVING: 문제해결력
-                   - COMMUNICATION: 의사소통능력
-                   - TEAMWORK: 팀워크/협업
-                   - ADAPTABILITY: 적응력/유연성
-                   - INITIATIVE: 주도성/자기주도성
+                4. 5가지 역량별 점수 (0-10점)
+                   - 의사소통능력
+                   - 조직이해능력
+                   - 대인관계능력
+                   - 문제해결능력
+                   - 자기개발능력
                 
                 반드시 다음 JSON 형식으로만 응답하세요:
                 {
@@ -274,7 +274,7 @@ public class InterviewService {
                 
                 주의: 백틱(```), 'json' 키워드, 기타 마크다운 문법을 절대 사용하지 마세요. 순수 JSON 객체만 반환하세요.
                 """;
-
+        
         List<Map<String, Object>> messages = List.of(
                 Map.of(
                         "role", "user",
@@ -286,7 +286,7 @@ public class InterviewService {
                                 """.formatted(fullTranscript)
                 )
         );
-
+        
         Map<String, Object> payloadMap = Map.of(
                 "anthropic_version", "bedrock-2023-05-31",
                 "max_tokens", 2000,
@@ -294,66 +294,66 @@ public class InterviewService {
                 "system", systemPrompt,
                 "messages", messages
         );
-
+        
         try {
             String payload = objectMapper.writeValueAsString(payloadMap);
-
+            
             InvokeModelRequest request = InvokeModelRequest.builder()
                     .modelId(bedrockProperty.getModelId())
                     .body(SdkBytes.fromString(payload, StandardCharsets.UTF_8))
                     .contentType("application/json")
                     .accept("application/json")
                     .build();
-
+            
             InvokeModelResponse response = bedrockRuntimeClient.invokeModel(request);
-
+            
             String responseBody = response.body().asUtf8String();
-
+            
             System.out.println(responseBody);
-
+            
             JsonNode jsonResponse = objectMapper.readTree(responseBody);
-
+            
             String analysisText = jsonResponse
                     .get("content")
                     .get(0)
                     .get("text")
                     .asText();
-
+            
             if (analysisText.startsWith("```")) {
                 analysisText = analysisText.replaceAll("```json?|```", "").trim();
             }
-
+            
             // JSON 파싱
             JsonNode analysisJson = objectMapper.readTree(analysisText);
-
+            
             // 강점 추출
             List<String> strengths = new ArrayList<>();
             analysisJson.get("strengths").forEach(node -> strengths.add(node.asText()));
-
+            
             // 약점 추출
             List<String> weaknesses = new ArrayList<>();
             analysisJson.get("weaknesses").forEach(node -> weaknesses.add(node.asText()));
-
+            
             // AI 피드백
             String aiFeedback = analysisJson.get("aiFeedback").asText();
-
+            
             // 역량별 점수 추출
             Map<Competency, Integer> competencyScores = new HashMap<>();
             JsonNode scoresNode = analysisJson.get("competencyScores");
-
+            
             competencyScores.put(Competency.PROBLEM_SOLVING, scoresNode.get("PROBLEM_SOLVING").asInt());
             competencyScores.put(Competency.COMMUNICATION, scoresNode.get("COMMUNICATION").asInt());
             competencyScores.put(Competency.TEAMWORK, scoresNode.get("TEAMWORK").asInt());
             competencyScores.put(Competency.ADAPTABILITY, scoresNode.get("ADAPTABILITY").asInt());
             competencyScores.put(Competency.INITIATIVE, scoresNode.get("INITIATIVE").asInt());
-
+            
             return InterviewAnalysisResult.builder()
                     .strengths(strengths)
                     .weaknesses(weaknesses)
                     .aiFeedback(aiFeedback)
                     .competencyScores(competencyScores)
                     .build();
-
+            
         } catch (Exception e) {
             log.error("면접 분석 실패: {}", e.getMessage(), e);
             throw InterviewExceptions.Parsing_Failed.toException();
