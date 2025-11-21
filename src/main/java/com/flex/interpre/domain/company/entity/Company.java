@@ -33,7 +33,8 @@ public class Company implements AccountPrincipal {
 
     // 공통 필드
 
-    @Column(nullable = false, length = 255, unique = true)
+    //TODO: 데이터셋용 유니크 제약 제거, 추후 다시 변경
+    @Column(nullable = true, length = 255)
     private String email;
 
     @Column(name = "google_id", length = 255, unique = true) // 다른 소셜 로그인 고려 nullable
