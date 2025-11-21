@@ -15,6 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.flex.interpre.global.constant.Role.COMPANY;
+
 @Entity
 @Getter
 @Builder
@@ -37,12 +39,14 @@ public class Company implements AccountPrincipal {
     @Column(nullable = true, length = 255)
     private String email;
 
-    @Column(name = "google_id", length = 255, unique = true) // 다른 소셜 로그인 고려 nullable
+    //TODO: 데이터셋용 유니크 제약 제거, 추후 다시 변경
+    @Column(name = "google_id", length = 255) // 다른 소셜 로그인 고려 nullable
     private String googleId;
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(nullable = false, length = 20)
-    private Role role;
+    private Role role = COMPANY;
 
     @Column(name = "is_approved", nullable = false)
     @Builder.Default
@@ -62,7 +66,8 @@ public class Company implements AccountPrincipal {
     @Column(name = "company_name", length = 200)
     private String companyName;
 
-    @Column(name = "business_number", length = 50, unique = true)
+    //TODO: 데이터셋용 유니크 제약 제거, 추후 다시 변경
+    @Column(name = "business_number", length = 50)
     private String businessNumber;
 
     @Column(columnDefinition = "TEXT")
@@ -86,7 +91,7 @@ public class Company implements AccountPrincipal {
 
     // 인증용 role 반환
     public Role getRole() {
-        return Role.COMPANY;
+        return this.role;
     }
 
     // 관리자의 기업 계정 승인용 메서드
