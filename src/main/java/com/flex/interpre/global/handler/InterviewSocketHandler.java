@@ -11,6 +11,8 @@ import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.interview.repository.QnaRepository;
 import com.flex.interpre.domain.interview.service.InterviewService;
+import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
+import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
@@ -37,11 +39,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Component
 @RequiredArgsConstructor
 public class InterviewSocketHandler extends AbstractWebSocketHandler {
-
+    
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewChatRepository interviewChatRepository;
     private final ClovaEmbeddingService clovaEmbeddingService;
@@ -52,29 +55,30 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final RecruitmentIndexService recruitmentIndexService;
     private final RecruitmentRepository recruitmentRepository;
-
+    private final JobSeekerRepository jobSeekerRepository;
+    
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
-
+        
         String sessionId = getSessionId(session);
         try {
             InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
                     .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
+            
             //이미 이전에 시작된 인터뷰인 경우
             if (interviewSession.getCurrentQuestionNum() > 0) {
                 throw InterviewExceptions.ALREADY_STARTED_INTERVIEW.toException();
             }
-
+            
             String document = interviewSession.getContentText();
-
+            
             audioChunksMap.put(session.getId(), new ArrayList<>());
-
+            
             // 인터뷰 시작 질문 생성
             String firstQuestion = interviewService.generateQuestions(document, new ArrayList<>());
             byte[] questionAudio = interviewService.tts(firstQuestion);
             String audioBase64 = Base64.getEncoder().encodeToString(questionAudio);
-
+            
             //중간 질의응답 저장 용
             InterviewChat interviewChat = InterviewChat.builder()
                     .interviewId(interviewSession.getInterviewId())
@@ -82,14 +86,14 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                     .question(firstQuestion)
                     .answer(null)
                     .build();
-
+            
             interviewChatRepository.save(interviewChat);
-
+            
             //redis session에 자소서 및 질문 넘버 저장
             interviewSession.setContentText(document);
             interviewSession.setCurrentQuestionNum(1);
             interviewSessionRepository.save(interviewSession);
-
+            
             InterviewResponse interviewResponse = InterviewResponse.builder()
                     .transcription(null)
                     .question(firstQuestion)
@@ -98,37 +102,37 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                     .interviewReport(null)
                     .isFinal(false)
                     .build();
-
+            
             sendResponse(session, ApiResponse.ok(interviewResponse));
-
-
+            
+            
         } catch (ApiException e) {
-
+            
             session.close(CloseStatus.NOT_ACCEPTABLE.withReason(e.getMessage()));
         } catch (Exception e) {
-
+            
             session.close(CloseStatus.SERVER_ERROR.withReason("서버 에러 발생"));
         }
-
-
+        
+        
     }
-
+    
     @Override
     public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message)
             throws IOException {
-
+        
         try {
             String wsSessionId = session.getId();
-
+            
             ByteBuffer byteBuffer = message.getPayload();
             byte[] audioChunk = new byte[byteBuffer.remaining()];
             byteBuffer.get(audioChunk);
-
+            
             // 청크를 리스트에 추가
             List<byte[]> chunks = audioChunksMap.get(wsSessionId);
             if (chunks != null) {
                 chunks.add(audioChunk);
-
+                
             } else {
                 session.close(CloseStatus.SERVER_ERROR.withReason("서버 에러 발생"));
             }
@@ -136,45 +140,45 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             session.close(CloseStatus.SERVER_ERROR.withReason("오디오 처리중 에러 발생"));
         }
     }
-
+    
     @Override
     @Transactional
     public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws IOException {
-
+        
         try {
             //웹소켓 id
             String wsSessionId = session.getId();
             // redis에 저장한 sessionID
             String sessionId = getSessionId(session);
             String payload = message.getPayload();
-
+            
             // JSON 파싱, 종료 요청이 오는 경우
             if (payload.contains("\"type\":\"END\"")) {
                 List<byte[]> chunks = audioChunksMap.get(wsSessionId);
-
+                
                 if (chunks == null || chunks.isEmpty()) {
                     sendResponse(session, ApiResponse.error(InterviewExceptions.NO_AUDIO_DATA.toException()));
                     return;
                 }
-
+                
                 // 프론트에서 받은 PCM 합치기
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 for (byte[] chunk : chunks) {
                     outputStream.write(chunk);
                 }
                 byte[] mergedPcm = outputStream.toByteArray();
-
+                
                 // PCM → WAV 변환 (16kHz, mono, 16bit)
                 byte[] wavData = addWavHeader(mergedPcm);
-
+                
                 // STT 실행
                 String transcription = interviewService.transcribe(wavData);
                 // 다음 요청을 위해 지우기
                 chunks.clear();
-
+                
                 sendQuestion(session, sessionId, transcription);
             }
-
+            
         } catch (ApiException e) {
             sendResponse(session, ApiResponse.error(e));
         } catch (Exception e) {
@@ -182,13 +186,13 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             session.close(CloseStatus.SERVER_ERROR.withReason("질문 생성 중 에러 발생"));
         }
     }
-
+    
     //맨앞에 WAV 헤더 붙히기
     private byte[] addWavHeader(byte[] pcmData) {
-
+        
         int byteRate = 16000 * 16 / 8;
         int dataSize = pcmData.length;
-
+        
         byte[] header = new byte[44];
         // ChunkID "RIFF"
         header[0] = 'R';
@@ -249,77 +253,77 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         header[41] = (byte) ((dataSize >> 8) & 0xff);
         header[42] = (byte) ((dataSize >> 16) & 0xff);
         header[43] = (byte) ((dataSize >> 24) & 0xff);
-
+        
         // 합치기
         byte[] wavData = new byte[header.length + pcmData.length];
         System.arraycopy(header, 0, wavData, 0, header.length);
         System.arraycopy(pcmData, 0, wavData, header.length, pcmData.length);
-
+        
         return wavData;
     }
-
+    
     private String getSessionId(WebSocketSession session) {
-
+        
         String uri = Objects.requireNonNull(session.getUri()).toString();
-
+        
         return UriComponentsBuilder.fromUriString(uri)
                 .build()
                 .getQueryParams()
                 .getFirst("sessionId");
     }
-
+    
     private <T> void sendResponse(WebSocketSession session, ApiResponse<T> response) throws IOException {
-
+        
         String json = objectMapper.writeValueAsString(response);
         session.sendMessage(new TextMessage(json));
     }
-
+    
     @Transactional
     protected void sendQuestion(WebSocketSession session, String sessionId, String transcription) throws IOException {
-
+        
         InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
+        
         Integer currentQuestionNumber = interviewSession.getCurrentQuestionNum();
         UUID interviewId = interviewSession.getInterviewId();
-
+        
         //대답에 해당하는 질문 가져오기
         InterviewChat currentChat = interviewChatRepository.findByQuestionNum(currentQuestionNumber);
-
+        
         //응답 저장
         currentChat.setAnswer(transcription);
         interviewChatRepository.save(currentChat);
-
+        
         // 인터뷰 결과 10분 이상이면 종료
         Long duration = checkInterviewEnd(interviewSession);
         if (duration >= 1) {
             finishInterview(session, sessionId, transcription, duration);
             return;
         }
-
+        
         //채팅 기록 불러오기
         List<InterviewChat> chatHistory = interviewChatRepository
                 .findByInterviewIdOrderByQuestionNum(interviewId);
-
+        
         //다음 질문 생성
         String nextQuestion = interviewService.generateQuestions(interviewSession.getContentText(), chatHistory);
-
+        
         InterviewChat nextChat = InterviewChat.builder()
                 .interviewId(interviewId)
                 .questionNum(currentQuestionNumber + 1)
                 .question(nextQuestion)
                 .answer(null)
                 .build();
-
+        
         interviewChatRepository.save(nextChat);
-
+        
         //세션의 현재 질문 번호 저장
         interviewSession.setCurrentQuestionNum(currentQuestionNumber + 1);
         interviewSessionRepository.save(interviewSession);
-
+        
         byte[] AudioData = interviewService.tts(nextQuestion);
         String audioBase64 = Base64.getEncoder().encodeToString(AudioData);
-
+        
         InterviewResponse response = InterviewResponse.builder()
                 .transcription(transcription)
                 .question(nextQuestion)
@@ -328,43 +332,43 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .interviewReport(null)
                 .isFinal(false)
                 .build();
-
+        
         sendResponse(session, ApiResponse.ok(response));
-
-
+        
+        
     }
-
+    
     private Long checkInterviewEnd(InterviewSession interviewSession) {
         LocalDateTime start = interviewSession.getStartedAt();
-
+        
         return Duration.between(start, LocalDateTime.now()).toMinutes();
     }
-
+    
     @Transactional
     protected void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration)
             throws IOException {
-
+        
         InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
+        
         Interview interview = interviewRepository.findById(interviewSession.getInterviewId())
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
+        
         List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(
                 interviewSession.getInterviewId());
-
+        
         //Redis에 저장된 채팅 기록 Qna 객체로 변환
         List<Qna> qnas = chatHistory.stream().map(chat -> Qna.from(chat, interview)).toList();
-
+        
         String fullTranscript = qnas.stream()
                 .map(qna -> String.format("질문: %s\n답변: %s", qna.getQuestion(), qna.getAnswer()))
                 .collect(Collectors.joining("\n\n"));
-
+        
         // 인터뷰 기록 인베딩
         List<Double> embedding = clovaEmbeddingService.embed(fullTranscript);
         interview.setEmbedding(embedding);
         interview.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")) + " 면접 기록");
-
+        
         //면접 분석
         InterviewAnalysisResult analysisResult = interviewService.analyzeInterview(fullTranscript);
         List<Recruitment> recommendationsFromSearch = recruitmentIndexService.searchByVector(embedding, 3);
@@ -373,7 +377,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .map(Recruitment::getId)
                 .toList();
         List<Recruitment> recommendations = recruitmentRepository.findAllById(recommendationIds);
-
+        
         InterviewReport interviewReport = InterviewReport.builder()
                 .interview(interview)
                 .aiFeedback(analysisResult.aiFeedback())
@@ -382,24 +386,43 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .competencyScores(analysisResult.competencyScores())
                 .recommendations(recommendations)
                 .build();
-
+        
         interview.setInterviewReport(interviewReport);
-
+        
         //전부 저장
         qnaRepository.saveAll(qnas);
-
+        
         interview.setDurationSecond(duration);
         interviewRepository.save(interview);
-
+        
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(interviewSession.getJobSeekerId());
+        List<Double> newEmbedding = interview.getEmbedding();
+        
+        if (newEmbedding != null && !newEmbedding.isEmpty()) {
+            List<Double> currentCumulative = jobSeeker.getCumulativeEmbedding();
+            int oldCount = jobSeeker.getInterviews().size() - 1;
+            
+            if (!currentCumulative.isEmpty() && oldCount > 0) {
+                List<Double> updated = IntStream.range(0, newEmbedding.size())
+                        .mapToObj(i -> (currentCumulative.get(i) * oldCount + newEmbedding.get(i)) / (oldCount + 1))
+                        .toList();
+                jobSeeker.setCumulativeEmbedding(updated);
+            } else {
+                // 첫 인터뷰
+                jobSeeker.setCumulativeEmbedding(newEmbedding);
+            }
+            jobSeekerRepository.save(jobSeeker);
+        }
+        
         String closingMessage = String.format(
                 "수고하셨습니다. %d분간 총 %d개의 질문에 답변해 주셨습니다. 오늘 면접 참여해 주셔서 감사합니다.",
                 duration,
                 chatHistory.size()
         );
-
+        
         byte[] audioData = interviewService.tts(closingMessage);
         String audioBase64 = Base64.getEncoder().encodeToString(audioData);
-
+        
         InterviewResponse response = InterviewResponse.builder()
                 .transcription(lastTranscription)
                 .question(closingMessage)
@@ -408,11 +431,11 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .interviewReport(InterviewReportDto.from(interviewReport))
                 .isFinal(true)
                 .build();
-
+        
         sendResponse(session, ApiResponse.ok(response));
-
+        
         interviewChatRepository.deleteAll(chatHistory);
         interviewSessionRepository.delete(interviewSession);
-
+        
     }
 }
