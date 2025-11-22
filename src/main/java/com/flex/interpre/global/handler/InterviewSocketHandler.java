@@ -95,10 +95,11 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                             transcriptionBufferMap.computeIfAbsent(wsSessionId, k -> new StringBuilder()).append(text).append(" ");
 
                             String rawText = transcriptionBufferMap.get(wsSessionId).toString().trim();
+                            String correctedText = koreanTextProcessor.correctSpacing(rawText);
 
                             InterviewResponse realtimeStt = InterviewResponse.builder()
                                     .type(InterviewResponse.ResponseType.STT)
-                                    .text(rawText)
+                                    .text(correctedText)
                                     .build();
                             sendSuccess(session, realtimeStt);
 
@@ -256,7 +257,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 return;
             }
 
-            String currentAnswer = rawAnswer;
+            String currentAnswer = koreanTextProcessor.correctSpacing(rawAnswer);
 
             boolean isComplete = interviewService.isAnswerComplete(currentQuestion, currentAnswer);
 
@@ -304,7 +305,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
             answerProcessed.put(wsSessionId, true);
 
-            String currentAnswer = rawAnswer;
+            String currentAnswer = koreanTextProcessor.correctSpacing(rawAnswer);
 
             cancelAnswerCheckTimer(wsSessionId);
             cancelForceCompleteTimer(wsSessionId);
