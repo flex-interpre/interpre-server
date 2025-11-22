@@ -63,10 +63,10 @@ app:
     allowed-urls:
       - http://localhost:3000/auth/callback
   clova:
-    id: ${CLOAVA_CLIENT_ID}
-    secret: ${CLOAVA_CLIENT_SECRET}
-    stt-url: ${CLOVA_STT_URL}
-    tts-url: ${CLOVA_TTS_URL}
+    stt-secret: ${CLOVA_STT_SECRET}
+    tts-client-id: ${CLOVA_TTS_CLIENT_ID}
+    tts-secret: ${CLOVA_TTS_SECRET}
+    tts-url: https://naveropenapi.apigw.ntruss.com/tts-premium/v1/tts
   bedrock:
     access-key: ${AWS_ACCESS_KEY}
     secret-key: ${AWS_SECRET_KEY}
