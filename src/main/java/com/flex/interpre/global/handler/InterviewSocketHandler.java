@@ -14,12 +14,18 @@ import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
+import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
+import com.flex.interpre.global.module.stt.ClovaGrpcSttService;
+import com.flex.interpre.global.util.KoreanTextProcessor;
+import com.naver.cloud.speech.grpc.NestRequest;
+import io.grpc.stub.StreamObserver;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.BinaryMessage;
@@ -36,12 +42,13 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class InterviewSocketHandler extends AbstractWebSocketHandler {
     
     private final InterviewSessionRepository interviewSessionRepository;
@@ -50,10 +57,20 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final QnaRepository qnaRepository;
     private final InterviewRepository interviewRepository;
     private final InterviewService interviewService;
-    private final ConcurrentHashMap<String, List<byte[]>> audioChunksMap = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final RecruitmentIndexService recruitmentIndexService;
+    private final RecruitmentRepository recruitmentRepository;
+    private final ClovaGrpcSttService clovaGrpcSttService;
     private final JobSeekerRepository jobSeekerRepository;
+    private final KoreanTextProcessor koreanTextProcessor;
+
+    private final ConcurrentHashMap<String, StreamObserver<NestRequest>> grpcStreamMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, StringBuilder> transcriptionBufferMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ScheduledFuture<?>> answerCheckTimers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ScheduledFuture<?>> forceCompleteTimers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> currentQuestions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> answerProcessed = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
     
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
