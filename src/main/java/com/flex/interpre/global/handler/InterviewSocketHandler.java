@@ -109,11 +109,13 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
                             ScheduledFuture<?> checkTimer = scheduler.schedule(() -> {
                                 log.info("1.5초 타이머 만료 - AI 답변 완료 판단 시작");
+                                checkAndProcessAnswer(session, sessionId);
                             }, 1500, TimeUnit.MILLISECONDS);
                             answerCheckTimers.put(wsSessionId, checkTimer);
 
                             ScheduledFuture<?> forceTimer = scheduler.schedule(() -> {
                                 log.info("5초 타이머 만료 - 강제 답변 종료");
+                                forceCompleteAnswer(session, sessionId);
                             }, 5000, TimeUnit.MILLISECONDS);
                             forceCompleteTimers.put(wsSessionId, forceTimer);
 
@@ -231,6 +233,94 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 Map.of("success", false, "message", message)
         );
         session.sendMessage(new TextMessage(json));
+    }
+
+    private void checkAndProcessAnswer(WebSocketSession session, String sessionId) {
+        try {
+            String wsSessionId = session.getId();
+
+            if (Boolean.TRUE.equals(answerProcessed.get(wsSessionId))) {
+                return;
+            }
+
+            String currentQuestion = currentQuestions.get(wsSessionId);
+            if (currentQuestion == null) {
+                log.warn("현재 질문을 찾을 수 없음: {}", wsSessionId);
+                return;
+            }
+
+            StringBuilder buffer = transcriptionBufferMap.get(wsSessionId);
+            String rawAnswer = buffer != null ? buffer.toString().trim() : "";
+
+            if (rawAnswer.isEmpty()) {
+                return;
+            }
+
+            String currentAnswer = rawAnswer;
+
+            boolean isComplete = interviewService.isAnswerComplete(currentQuestion, currentAnswer);
+
+            if (isComplete) {
+                log.info("AI 판단: 답변 완료 - 다음 질문 생성 시작");
+
+                answerProcessed.put(wsSessionId, true);
+
+                cancelAnswerCheckTimer(wsSessionId);
+                cancelForceCompleteTimer(wsSessionId);
+
+                InterviewResponse answerCompleteSignal = InterviewResponse.builder()
+                        .type(InterviewResponse.ResponseType.ANSWER_COMPLETE)
+                        .build();
+                sendSuccess(session, answerCompleteSignal);
+
+                transcriptionBufferMap.put(wsSessionId, new StringBuilder());
+
+                sendQuestion(session, sessionId, currentAnswer);
+            }
+
+        } catch (Exception e) {
+            log.error("답변 완료 확인 오류: {}", e.getMessage(), e);
+        }
+    }
+
+    private void forceCompleteAnswer(WebSocketSession session, String sessionId) {
+        try {
+            String wsSessionId = session.getId();
+
+            if (Boolean.TRUE.equals(answerProcessed.get(wsSessionId))) {
+                log.info("5초 타이머 만료했지만 이미 질문 생성됨 - 스킵");
+                return;
+            }
+
+            StringBuilder buffer = transcriptionBufferMap.get(wsSessionId);
+            String rawAnswer = buffer != null ? buffer.toString().trim() : "";
+
+            if (rawAnswer.isEmpty()) {
+                log.warn("5초 타이머 만료했지만 답변이 없음");
+                return;
+            }
+
+            log.info("5초 타이머 만료 - 강제 답변 종료 처리");
+
+            answerProcessed.put(wsSessionId, true);
+
+            String currentAnswer = rawAnswer;
+
+            cancelAnswerCheckTimer(wsSessionId);
+            cancelForceCompleteTimer(wsSessionId);
+
+            InterviewResponse answerCompleteSignal = InterviewResponse.builder()
+                    .type(InterviewResponse.ResponseType.ANSWER_COMPLETE)
+                    .build();
+            sendSuccess(session, answerCompleteSignal);
+
+            transcriptionBufferMap.put(wsSessionId, new StringBuilder());
+
+            sendQuestion(session, sessionId, currentAnswer);
+
+        } catch (Exception e) {
+            log.error("강제 답변 종료 오류: {}", e.getMessage(), e);
+        }
     }
     
     @Override
@@ -386,46 +476,41 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         currentChat.setAnswer(transcription);
         interviewChatRepository.save(currentChat);
         
-        // 인터뷰 결과 10분 이상이면 종료
         Long duration = checkInterviewEnd(interviewSession);
-        if (duration >= 1) {
+        if (duration >= 10) {
             finishInterview(session, sessionId, transcription, duration);
             return;
         }
-        
-        //채팅 기록 불러오기
+
         List<InterviewChat> chatHistory = interviewChatRepository
                 .findByInterviewIdOrderByQuestionNum(interviewId);
-        
-        //다음 질문 생성
+
         String nextQuestion = interviewService.generateQuestions(interviewSession.getContentText(), chatHistory);
-        
+
         InterviewChat nextChat = InterviewChat.builder()
                 .interviewId(interviewId)
                 .questionNum(currentQuestionNumber + 1)
                 .question(nextQuestion)
                 .answer(null)
                 .build();
-        
+
         interviewChatRepository.save(nextChat);
-        
-        //세션의 현재 질문 번호 저장
+
         interviewSession.setCurrentQuestionNum(currentQuestionNumber + 1);
         interviewSessionRepository.save(interviewSession);
-        
+
+        currentQuestions.put(session.getId(), nextQuestion);
+
         byte[] AudioData = interviewService.tts(nextQuestion);
         String audioBase64 = Base64.getEncoder().encodeToString(AudioData);
-        
+
         InterviewResponse response = InterviewResponse.builder()
-                .transcription(transcription)
+                .type(InterviewResponse.ResponseType.QUESTION)
                 .question(nextQuestion)
                 .audio(audioBase64)
-                .questionNumber(currentQuestionNumber + 1)
-                .interviewReport(null)
-                .isFinal(false)
                 .build();
-        
-        sendResponse(session, ApiResponse.ok(response));
+
+        sendSuccess(session, response);
         
         
     }
