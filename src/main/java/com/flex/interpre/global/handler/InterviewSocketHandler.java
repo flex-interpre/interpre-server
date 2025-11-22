@@ -56,7 +56,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final RecruitmentIndexService recruitmentIndexService;
     private final RecruitmentRepository recruitmentRepository;
     private final JobSeekerRepository jobSeekerRepository;
-    
+
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         
@@ -347,13 +347,14 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     @Transactional
     protected void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration)
             throws IOException {
-        
+        // 인터뷰 세션
         InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
         
         Interview interview = interviewRepository.findById(interviewSession.getInterviewId())
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-        
+
+        // 질의응답 내역
         List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(
                 interviewSession.getInterviewId());
         
@@ -371,20 +372,45 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         
         //면접 분석
         InterviewAnalysisResult analysisResult = interviewService.analyzeInterview(fullTranscript);
-        List<Recruitment> recommendationsFromSearch = recruitmentIndexService.searchByVector(embedding, 3);
-        
-        List<UUID> recommendationIds = recommendationsFromSearch.stream()
-                .map(Recruitment::getId)
+
+        // 기본 후보군 knn으로 선택 (임의로 40개 지정)
+        List<Recruitment> candidates = recruitmentIndexService.searchByVector(embedding, 40);
+
+        /* -- 온보딩 데이터 기반 가중치 반영 -- TODO: 가중치 점수 테스트 */
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(interviewSession.getJobSeekerId());
+        Map<UUID, Double> scored = new HashMap<>(); // 공고문, 추가점수를 가지는 map
+
+        for (Recruitment job : candidates) {
+            double score = 1.0; // 기본 점수
+
+            // 희망근무지역이 같은 공고에 추가 점수 반영
+            boolean matchesArea = !Collections.disjoint(jobSeeker.getDesiredAreas(), job.getJobAreas());
+            if (matchesArea) { score += 0.4; }
+
+            // 희망근무지역 (하나라도 일치하면 가점)
+            boolean matchesJob =
+                    !Collections.disjoint(jobSeeker.getJobFirsts(), job.getJobFirsts()) ||
+                    !Collections.disjoint(jobSeeker.getJobSeconds(), job.getJobSeconds()) ||
+                    !Collections.disjoint(jobSeeker.getJobThirds(), job.getJobThirds());
+            if (matchesJob) { score += 0.6; }
+
+            scored.put(job.getId(), score);
+        }
+
+        // 최종 정렬 후 상위 5개 추천
+        List<Recruitment> finalRecommendations = candidates.stream()
+                .sorted((a, b) -> Double.compare(scored.get(b.getId()), scored.get(a.getId())))
+                .limit(5)
                 .toList();
-        List<Recruitment> recommendations = recruitmentRepository.findAllById(recommendationIds);
-        
+
+        // 면접 리포트 생성
         InterviewReport interviewReport = InterviewReport.builder()
                 .interview(interview)
                 .aiFeedback(analysisResult.aiFeedback())
                 .strengths(analysisResult.strengths())
                 .weaknesses(analysisResult.weaknesses())
                 .competencyScores(analysisResult.competencyScores())
-                .recommendations(recommendations)
+                .recommendations(finalRecommendations)
                 .build();
         
         interview.setInterviewReport(interviewReport);
@@ -394,8 +420,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         
         interview.setDurationSecond(duration);
         interviewRepository.save(interview);
-        
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(interviewSession.getJobSeekerId());
+
         List<Double> newEmbedding = interview.getEmbedding();
         
         if (newEmbedding != null && !newEmbedding.isEmpty()) {
