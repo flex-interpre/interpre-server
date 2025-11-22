@@ -23,10 +23,10 @@ public class RecruitmentImportController {
         return ApiResponse.ok(count);
     }
 
-    @Operation(summary = "공고문 데이터 opensearch 인덱싱")
+    @Operation(summary = "공고문 전체 Bulk 인덱싱")
     @PostMapping("/reindex")
     public ApiResponse<String> reindexAll() {
         recruitmentImportService.indexAllToOpenSearch();
-        return ApiResponse.ok("모든 공고문 인덱싱 완료");
+        return ApiResponse.ok("Bulk 인덱싱 요청 완료");
     }
 }

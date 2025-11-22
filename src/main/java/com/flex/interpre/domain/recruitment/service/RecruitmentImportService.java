@@ -68,16 +68,20 @@ public class RecruitmentImportService {
     // 공고문 db 데이터 인덱싱
     @Transactional(readOnly = true)
     public void indexAllToOpenSearch() {
-        List<Recruitment> recruitments = recruitmentRepository.findAll();
-
-        for (Recruitment recruitment : recruitments) {
-            try {
-                recruitmentIndexService.indexRecruitment(recruitment);
-            } catch (Exception e) {
-                log.error("인덱싱 실패 [{}]: {}", recruitment.getTitle(), e.getMessage());
+        try {
+            List<Recruitment> recruitments = recruitmentRepository.findAll();
+            if (recruitments.isEmpty()) {
+                log.warn("인덱싱할 공고문이 없습니다.");
+                return;
             }
-        }
 
-        log.info("인덱싱 완료: {}/{}", recruitments.size());
+            log.info("Bulk 인덱싱 시작... 총 {}건", recruitments.size());
+            recruitmentIndexService.bulkIndexRecruitments(recruitments);
+
+            log.info("Bulk 인덱싱 완료!");
+
+        } catch (Exception e) {
+            log.error("Bulk 인덱싱 중 오류 발생: {}", e.getMessage(), e);
+        }
     }
 }
