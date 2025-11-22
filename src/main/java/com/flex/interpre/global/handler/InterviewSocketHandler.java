@@ -102,6 +102,21 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                                     .build();
                             sendSuccess(session, realtimeStt);
 
+                            cancelAnswerCheckTimer(wsSessionId);
+                            cancelForceCompleteTimer(wsSessionId);
+
+                            answerProcessed.put(wsSessionId, false);
+
+                            ScheduledFuture<?> checkTimer = scheduler.schedule(() -> {
+                                log.info("1.5초 타이머 만료 - AI 답변 완료 판단 시작");
+                            }, 1500, TimeUnit.MILLISECONDS);
+                            answerCheckTimers.put(wsSessionId, checkTimer);
+
+                            ScheduledFuture<?> forceTimer = scheduler.schedule(() -> {
+                                log.info("5초 타이머 만료 - 강제 답변 종료");
+                            }, 5000, TimeUnit.MILLISECONDS);
+                            forceCompleteTimers.put(wsSessionId, forceTimer);
+
                         } catch (Exception e) {
                             log.error("실시간 STT 전송 오류: {}", e.getMessage(), e);
                         }
@@ -173,6 +188,9 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, @NonNull CloseStatus status) throws Exception {
         String wsSessionId = session.getId();
 
+        cancelAnswerCheckTimer(wsSessionId);
+        cancelForceCompleteTimer(wsSessionId);
+
         StreamObserver<NestRequest> grpcStream = grpcStreamMap.remove(wsSessionId);
         if (grpcStream != null) {
             try {
@@ -184,6 +202,21 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
         transcriptionBufferMap.remove(wsSessionId);
         currentQuestions.remove(wsSessionId);
+        answerProcessed.remove(wsSessionId);
+    }
+
+    private void cancelAnswerCheckTimer(String wsSessionId) {
+        ScheduledFuture<?> existingTimer = answerCheckTimers.remove(wsSessionId);
+        if (existingTimer != null && !existingTimer.isDone()) {
+            existingTimer.cancel(false);
+        }
+    }
+
+    private void cancelForceCompleteTimer(String wsSessionId) {
+        ScheduledFuture<?> existingTimer = forceCompleteTimers.remove(wsSessionId);
+        if (existingTimer != null && !existingTimer.isDone()) {
+            existingTimer.cancel(false);
+        }
     }
 
     private void sendSuccess(WebSocketSession session, Object data) throws IOException {
