@@ -86,74 +86,118 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             }
             
             String document = interviewSession.getContentText();
-            
-            audioChunksMap.put(session.getId(), new ArrayList<>());
-            
-            // 인터뷰 시작 질문 생성
+
+            StreamObserver<NestRequest> grpcStream = clovaGrpcSttService.startStreaming(
+                    session,
+                    (text) -> {
+                        try {
+                            String wsSessionId = session.getId();
+                            transcriptionBufferMap.computeIfAbsent(wsSessionId, k -> new StringBuilder()).append(text).append(" ");
+
+                            String rawText = transcriptionBufferMap.get(wsSessionId).toString().trim();
+
+                            InterviewResponse realtimeStt = InterviewResponse.builder()
+                                    .type(InterviewResponse.ResponseType.STT)
+                                    .text(rawText)
+                                    .build();
+                            sendSuccess(session, realtimeStt);
+
+                        } catch (Exception e) {
+                            log.error("실시간 STT 전송 오류: {}", e.getMessage(), e);
+                        }
+                    }
+            );
+
+            clovaGrpcSttService.sendConfig(grpcStream);
+
+            grpcStreamMap.put(session.getId(), grpcStream);
+            transcriptionBufferMap.put(session.getId(), new StringBuilder());
+
             String firstQuestion = interviewService.generateQuestions(document, new ArrayList<>());
+
+            currentQuestions.put(session.getId(), firstQuestion);
             byte[] questionAudio = interviewService.tts(firstQuestion);
             String audioBase64 = Base64.getEncoder().encodeToString(questionAudio);
-            
-            //중간 질의응답 저장 용
+
             InterviewChat interviewChat = InterviewChat.builder()
                     .interviewId(interviewSession.getInterviewId())
                     .questionNum(1)
                     .question(firstQuestion)
                     .answer(null)
                     .build();
-            
+
             interviewChatRepository.save(interviewChat);
-            
-            //redis session에 자소서 및 질문 넘버 저장
+
             interviewSession.setContentText(document);
             interviewSession.setCurrentQuestionNum(1);
             interviewSessionRepository.save(interviewSession);
-            
+
             InterviewResponse interviewResponse = InterviewResponse.builder()
-                    .transcription(null)
+                    .type(InterviewResponse.ResponseType.QUESTION)
                     .question(firstQuestion)
                     .audio(audioBase64)
-                    .questionNumber(1)
-                    .interviewReport(null)
-                    .isFinal(false)
                     .build();
-            
-            sendResponse(session, ApiResponse.ok(interviewResponse));
+
+            sendSuccess(session, interviewResponse);
             
             
         } catch (ApiException e) {
-            
-            session.close(CloseStatus.NOT_ACCEPTABLE.withReason(e.getMessage()));
+            log.error("연결 수립 오류 (ApiException): {}", e.getMessage(), e);
+            sendError(session, e.getMessage());
+            session.close(CloseStatus.NOT_ACCEPTABLE);
         } catch (Exception e) {
-            
-            session.close(CloseStatus.SERVER_ERROR.withReason("서버 에러 발생"));
+            log.error("연결 수립 오류: {}", e.getMessage(), e);
+            sendError(session, "서버 에러 발생: " + e.getMessage());
+            session.close(CloseStatus.SERVER_ERROR);
         }
-        
-        
     }
     
     @Override
-    public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message)
-            throws IOException {
-        
+    public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message) {
         try {
             String wsSessionId = session.getId();
-            
-            ByteBuffer byteBuffer = message.getPayload();
-            byte[] audioChunk = new byte[byteBuffer.remaining()];
-            byteBuffer.get(audioChunk);
-            
-            // 청크를 리스트에 추가
-            List<byte[]> chunks = audioChunksMap.get(wsSessionId);
-            if (chunks != null) {
-                chunks.add(audioChunk);
-                
+            StreamObserver<NestRequest> grpcStream = grpcStreamMap.get(wsSessionId);
+
+            if (grpcStream != null) {
+                byte[] audioChunk = message.getPayload().array();
+                clovaGrpcSttService.sendAudioData(grpcStream, audioChunk);
             } else {
-                session.close(CloseStatus.SERVER_ERROR.withReason("서버 에러 발생"));
+                log.warn("gRPC 스트림을 찾을 수 없음: {}", wsSessionId);
             }
         } catch (Exception e) {
-            session.close(CloseStatus.SERVER_ERROR.withReason("오디오 처리중 에러 발생"));
+            log.error("오디오 처리 오류: {}", e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, @NonNull CloseStatus status) throws Exception {
+        String wsSessionId = session.getId();
+
+        StreamObserver<NestRequest> grpcStream = grpcStreamMap.remove(wsSessionId);
+        if (grpcStream != null) {
+            try {
+                grpcStream.onCompleted();
+            } catch (Exception e) {
+                log.warn("gRPC 스트림 종료 오류: {}", e.getMessage());
+            }
+        }
+
+        transcriptionBufferMap.remove(wsSessionId);
+        currentQuestions.remove(wsSessionId);
+    }
+
+    private void sendSuccess(WebSocketSession session, Object data) throws IOException {
+        String json = objectMapper.writeValueAsString(
+                Map.of("success", true, "data", data)
+        );
+        session.sendMessage(new TextMessage(json));
+    }
+
+    private void sendError(WebSocketSession session, String message) throws IOException {
+        String json = objectMapper.writeValueAsString(
+                Map.of("success", false, "message", message)
+        );
+        session.sendMessage(new TextMessage(json));
     }
     
     @Override
