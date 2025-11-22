@@ -633,17 +633,15 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         
         byte[] audioData = interviewService.tts(closingMessage);
         String audioBase64 = Base64.getEncoder().encodeToString(audioData);
-        
+
         InterviewResponse response = InterviewResponse.builder()
-                .transcription(lastTranscription)
+                .type(InterviewResponse.ResponseType.END)
                 .question(closingMessage)
                 .audio(audioBase64)
-                .questionNumber(interviewSession.getCurrentQuestionNum())
-                .interviewReport(InterviewReportDto.from(interviewReport))
-                .isFinal(true)
+                .report(InterviewReportDto.from(interviewReport))
                 .build();
-        
-        sendResponse(session, ApiResponse.ok(response));
+
+        sendSuccess(session, response);
         
         interviewChatRepository.deleteAll(chatHistory);
         interviewSessionRepository.delete(interviewSession);
