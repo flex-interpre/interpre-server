@@ -20,10 +20,10 @@ public class KoreanTextProcessor {
 
     public KoreanTextProcessor() {
         this.analyzer = new KoreanAnalyzer(
-                null,  // userDict - 사용자 사전 없음
-                KoreanTokenizer.DecompoundMode.NONE,  // 복합명사 분해하지 않음
-                Collections.emptySet(),  // stopTags - 빈 Set으로 모든 품사 유지
-                false  // outputUnknownUnigrams
+                null,
+                KoreanTokenizer.DecompoundMode.NONE,
+                Collections.emptySet(),
+                false
         );
     }
 
@@ -52,7 +52,7 @@ public class KoreanTextProcessor {
             tokenStream.reset();
             while (tokenStream.incrementToken()) {
                 String term = termAttr.toString();
-                POS.Tag pos = posAttr.getLeftPOS(); // 품사 태그
+                POS.Tag pos = posAttr.getLeftPOS();
 
                 tokens.add(new Token(term, pos));
             }
@@ -74,7 +74,6 @@ public class KoreanTextProcessor {
             if (prevToken == null) {
                 result.append(token.term);
             } else {
-                // 띄어쓰기 규칙 적용
                 if (shouldAddSpace(prevToken, token)) {
                     result.append(" ");
                 }
