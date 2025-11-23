@@ -14,7 +14,6 @@ import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.recruitment.repository.RecruitmentRepository;
 import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
@@ -54,9 +53,8 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final ConcurrentHashMap<String, List<byte[]>> audioChunksMap = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final RecruitmentIndexService recruitmentIndexService;
-    private final RecruitmentRepository recruitmentRepository;
     private final JobSeekerRepository jobSeekerRepository;
-
+    
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         
@@ -353,7 +351,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         
         Interview interview = interviewRepository.findById(interviewSession.getInterviewId())
                 .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
+        
         // 질의응답 내역
         List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(
                 interviewSession.getInterviewId());
@@ -372,37 +370,45 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         
         //면접 분석
         InterviewAnalysisResult analysisResult = interviewService.analyzeInterview(fullTranscript);
-
-        // 기본 후보군 knn으로 선택 (임의로 40개 지정)
-        List<Recruitment> candidates = recruitmentIndexService.searchByVector(embedding, 40);
-
+        
         /* -- 온보딩 데이터 기반 가중치 반영 -- TODO: 가중치 점수 테스트 */
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(interviewSession.getJobSeekerId());
+        
+        // 유저의 누적 임베딩 (없으면 인터뷰 임베딩 사용)
+        List<Double> searchVector = (jobSeeker.getCumulativeEmbedding() != null && !jobSeeker.getCumulativeEmbedding().isEmpty())
+                ? jobSeeker.getCumulativeEmbedding()
+                : embedding;
+        
+        List<Recruitment> candidates = recruitmentIndexService.searchByVector(searchVector, 40);
         Map<UUID, Double> scored = new HashMap<>(); // 공고문, 추가점수를 가지는 map
-
+        
         for (Recruitment job : candidates) {
             double score = 1.0; // 기본 점수
-
+            
             // 희망근무지역이 같은 공고에 추가 점수 반영
             boolean matchesArea = !Collections.disjoint(jobSeeker.getDesiredAreas(), job.getJobAreas());
-            if (matchesArea) { score += 0.4; }
-
+            if (matchesArea) {
+                score += 0.4;
+            }
+            
             // 희망근무지역 (하나라도 일치하면 가점)
             boolean matchesJob =
                     !Collections.disjoint(jobSeeker.getJobFirsts(), job.getJobFirsts()) ||
-                    !Collections.disjoint(jobSeeker.getJobSeconds(), job.getJobSeconds()) ||
-                    !Collections.disjoint(jobSeeker.getJobThirds(), job.getJobThirds());
-            if (matchesJob) { score += 0.6; }
-
+                            !Collections.disjoint(jobSeeker.getJobSeconds(), job.getJobSeconds()) ||
+                            !Collections.disjoint(jobSeeker.getJobThirds(), job.getJobThirds());
+            if (matchesJob) {
+                score += 0.6;
+            }
+            
             scored.put(job.getId(), score);
         }
-
+        
         // 최종 정렬 후 상위 5개 추천
         List<Recruitment> finalRecommendations = candidates.stream()
                 .sorted((a, b) -> Double.compare(scored.get(b.getId()), scored.get(a.getId())))
                 .limit(5)
                 .toList();
-
+        
         // 면접 리포트 생성
         InterviewReport interviewReport = InterviewReport.builder()
                 .interview(interview)
@@ -420,7 +426,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         
         interview.setDurationSecond(duration);
         interviewRepository.save(interview);
-
+        
         List<Double> newEmbedding = interview.getEmbedding();
         
         if (newEmbedding != null && !newEmbedding.isEmpty()) {
