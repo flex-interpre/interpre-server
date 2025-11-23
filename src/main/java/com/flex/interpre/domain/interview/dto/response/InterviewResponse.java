@@ -1,14 +1,21 @@
 package com.flex.interpre.domain.interview.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record InterviewResponse(
-        String transcription,
+        ResponseType type,
         String question,
         String audio,
-        Integer questionNumber,
-        InterviewReportDto interviewReport,
-        boolean isFinal
+        String text,
+        InterviewReportDto report
 ) {
+    public enum ResponseType {
+        QUESTION,
+        STT,
+        ANSWER_COMPLETE,
+        END
+    }
 }
