@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>면접 WebSocket 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse-recording {
+            animation: pulse-dot 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="bg-white h-screen overflow-hidden">
+    <div class="flex h-screen">
+        <!-- Left Sidebar -->
+        <div class="w-80 bg-gray-50 border-r border-gray-200 flex flex-col overflow-y-auto">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-gray-900">면접 시스템</h1>
+                <p class="text-sm text-gray-500 mt-1">WebSocket 테스트</p>
+            </div>
+
+            <div class="flex-1 p-4 space-y-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">1. 로그인</h3>
+                    <button onclick="login()" class="w-full bg-black hover:bg-gray-800 text-white text-sm px-4 py-2 rounded transition mb-2">
+                        Google 로그인
+                    </button>
+                    <input type="text" id="accessToken" placeholder="액세스 토큰"
+                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none">
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">2. 자기소개서 관리</h3>
+                    <input type="file" id="documentFile" accept=".txt,.pdf,.docx"
+                           class="w-full text-sm mb-2 file:mr-2 file:py-2 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-white file:text-gray-700 hover:file:bg-gray-50">
+                    <div class="flex gap-2 mb-2">
+                        <button onclick="uploadDocument()" class="flex-1 bg-black hover:bg-gray-800 text-white text-sm px-3 py-2 rounded transition">
+                            업로드
+                        </button>
+                        <button onclick="listDocuments()" class="flex-1 bg-white hover:bg-gray-50 text-gray-900 text-sm px-3 py-2 rounded border border-gray-300 transition">
+                            목록
+                        </button>
+                    </div>
+                    <div id="documentList" class="hidden">
+                        <div id="documentListContent" class="bg-gray-50 border border-gray-200 rounded p-2 text-xs max-h-40 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">3. 세션 발급</h3>
+                    <input type="text" id="selectedDocumentId" placeholder="문서 ID"
+                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm mb-2 focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none">
+                    <button onclick="issueSession()" class="w-full bg-black hover:bg-gray-800 text-white text-sm px-4 py-2 rounded transition">
+                        세션 발급
+                    </button>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">4. 면접 시작</h3>
+                    <input type="text" id="sessionId" placeholder="Session ID"
+                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm mb-2 focus:ring-1 focus:ring-gray-400 focus:border-gray-400 outline-none">
+                    <div class="flex gap-2 mb-3">
+                        <button id="connectBtn" onclick="connect()" class="flex-1 bg-black hover:bg-gray-800 text-white text-sm px-3 py-2 rounded transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            연결
+                        </button>
+                        <button id="disconnectBtn" onclick="disconnect()" disabled class="flex-1 bg-white hover:bg-gray-50 text-gray-900 text-sm px-3 py-2 rounded border border-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            연결 해제
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">상태:</span>
+                        <span id="statusBadge" class="text-xs font-medium text-gray-700">연결 안됨</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Main Area -->
+        <div class="flex-1 flex flex-col bg-white">
+            <!-- Header -->
+            <div class="border-b border-gray-200 px-6 py-4">
+                <h2 class="text-lg font-semibold text-gray-900">면접 스크립트</h2>
+                <p class="text-sm text-gray-500 mt-1">실시간 질문과 답변</p>
+            </div>
+
+            <!-- Chat History -->
+            <div id="chatHistory" class="flex-1 overflow-y-auto p-6 space-y-6">
+                <div class="text-center text-gray-400 text-sm py-12">
+                    면접을 시작하면 질문과 답변이 여기에 표시됩니다.
+                </div>
+            </div>
+
+            <!-- Audio Player (Bottom Fixed) -->
+            <div id="audioPlayerContainer" class="border-t border-gray-200 px-6 py-4 bg-gray-50 hidden">
+                <div id="audioPlayer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportPanel" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900">면접 분석 리포트</h3>
+                <button onclick="closeReport()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div id="reportDisplay" class="p-6"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let audioContext = null;
+        let mediaStream = null;
+        let processor = null;
+        let chatHistory = [];
+        let currentAnswer = '';
+        let isRecording = false;
+
+        // ========== UI Functions ==========
+
+        function closeReport() {
+            document.getElementById('reportPanel').classList.add('hidden');
+        }
+
+        // ========== Chat UI Functions ==========
+
+        function addQuestionToChat(question) {
+            const chatHistoryEl = document.getElementById('chatHistory');
+
+            if (chatHistory.length === 0) {
+                chatHistoryEl.innerHTML = '';
+            }
+
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'flex justify-start';
+            questionDiv.innerHTML = `
+                <div class="max-w-[75%] bg-gray-100 border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div class="text-xs text-gray-500 font-medium mb-2">AI 질문</div>
+                    <div class="text-sm text-gray-900 leading-relaxed">${question}</div>
+                </div>
+            `;
+            chatHistoryEl.appendChild(questionDiv);
+
+            const answerDiv = document.createElement('div');
+            answerDiv.className = 'flex justify-end';
+            answerDiv.id = 'currentAnswerBox';
+            answerDiv.innerHTML = `
+                <div class="max-w-[75%] bg-black text-white rounded-lg p-4 shadow-sm">
+                    <div class="text-xs text-gray-400 font-medium mb-2">내 답변</div>
+                    <div class="text-sm leading-relaxed" id="currentAnswerText">
+                        <span class="text-gray-400 italic">답변 대기 중...</span>
+                    </div>
+                </div>
+            `;
+            chatHistoryEl.appendChild(answerDiv);
+
+            chatHistory.push({ question, answer: '' });
+            scrollToBottom();
+        }
+
+        function updateCurrentAnswer(text) {
+            const answerTextEl = document.getElementById('currentAnswerText');
+            if (answerTextEl) {
+                if (text && text.trim() !== '') {
+                    answerTextEl.innerHTML = `<div class="leading-relaxed">${text}</div>`;
+                } else {
+                    answerTextEl.innerHTML = '<span class="text-gray-400 italic">답변 대기 중...</span>';
+                }
+                scrollToBottom();
+            }
+        }
+
+        function finalizeCurrentAnswer(text) {
+            const currentBox = document.getElementById('currentAnswerBox');
+            if (currentBox) {
+                currentBox.removeAttribute('id');
+                const answerText = currentBox.querySelector('#currentAnswerText');
+                if (answerText) {
+                    answerText.removeAttribute('id');
+                }
+            }
+
+            if (chatHistory.length > 0) {
+                chatHistory[chatHistory.length - 1].answer = text;
+            }
+
+            currentAnswer = '';
+        }
+
+        function scrollToBottom() {
+            const chatHistoryEl = document.getElementById('chatHistory');
+            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+        }
+
+        // ========== Auth & Document Functions ==========
+
+        function login() {
+            window.location.href = '/api/oauth2/authorization/google';
+        }
+
+        async function uploadDocument() {
+            const token = document.getElementById('accessToken').value.trim();
+            if (!token) {
+                alert('로그인 후 액세스 토큰을 입력해주세요.');
+                return;
+            }
+
+            const fileInput = document.getElementById('documentFile');
+            if (!fileInput.files.length) {
+                alert('파일을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/api/documents', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.statusCode === 200) {
+                    alert('문서가 업로드되었습니다!');
+                    listDocuments();
+                } else {
+                    alert(`업로드 실패: ${result.message || '알 수 없는 오류'}`);
+                }
+            } catch (error) {
+                alert(`오류: ${error.message}`);
+            }
+        }
+
+        async function listDocuments() {
+            const token = document.getElementById('accessToken').value.trim();
+            if (!token) {
+                alert('로그인 후 액세스 토큰을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/documents', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.statusCode === 200) {
+                    const documentList = document.getElementById('documentList');
+                    const documentListContent = document.getElementById('documentListContent');
+
+                    if (!result.data || result.data.length === 0) {
+                        documentListContent.innerHTML = '<p class="text-gray-400 text-center py-2">업로드된 문서가 없습니다.</p>';
+                    } else {
+                        documentListContent.innerHTML = result.data.map(doc => `
+                            <div class="p-2 mb-2 border border-gray-200 rounded hover:bg-white cursor-pointer transition"
+                                 onclick="selectDocument('${doc.id}', '${doc.title}')">
+                                <div class="font-medium text-gray-900 text-xs mb-1">${doc.title || '제목 없음'}</div>
+                                <div class="text-xs text-gray-500">ID: ${doc.id.substring(0, 8)}...</div>
+                            </div>
+                        `).join('');
+                    }
+
+                    documentList.classList.remove('hidden');
+                } else {
+                    alert(`조회 실패: ${result.message || '알 수 없는 오류'}`);
+                }
+            } catch (error) {
+                alert(`오류: ${error.message}`);
+            }
+        }
+
+        function selectDocument(docId, docTitle) {
+            document.getElementById('selectedDocumentId').value = docId;
+        }
+
+        async function issueSession() {
+            const token = document.getElementById('accessToken').value.trim();
+            if (!token) {
+                alert('로그인 후 액세스 토큰을 입력해주세요.');
+                return;
+            }
+
+            const documentId = document.getElementById('selectedDocumentId').value.trim();
+            if (!documentId) {
+                alert('문서 ID를 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/interviews/socket/${documentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.statusCode === 200) {
+                    const sessionId = result.data.sessionID;
+                    document.getElementById('sessionId').value = sessionId;
+                    alert(`세션이 발급되었습니다!\nSession ID: ${sessionId}`);
+                } else {
+                    alert(`발급 실패: ${result.message || '알 수 없는 오류'}`);
+                }
+            } catch (error) {
+                alert(`오류: ${error.message}`);
+            }
+        }
+
+        // ========== WebSocket & Recording Functions ==========
+
+        function updateStatus(connected, recording = false) {
+            const badge = document.getElementById('statusBadge');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            if (recording) {
+                badge.className = 'text-xs font-medium text-red-600 pulse-recording';
+                badge.textContent = '녹음 중';
+            } else if (connected) {
+                badge.className = 'text-xs font-medium text-green-600';
+                badge.textContent = '연결됨';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                badge.className = 'text-xs font-medium text-gray-700';
+                badge.textContent = '연결 안됨';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        function connect() {
+            const sessionId = document.getElementById('sessionId').value.trim();
+            if (!sessionId) {
+                alert('Session ID를 입력해주세요.');
+                return;
+            }
+
+            const wsUrl = `ws://localhost:8080/api/ws/interview?sessionId=${sessionId}`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                updateStatus(true);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const response = JSON.parse(event.data);
+
+                    if (response.success === true) {
+                        const data = response.data;
+
+                        switch (data.type) {
+                            case 'QUESTION':
+                                addQuestionToChat(data.question);
+                                if (data.audio) {
+                                    playAudio(data.audio);
+                                }
+                                break;
+
+                            case 'STT':
+                                currentAnswer = data.text;
+                                updateCurrentAnswer(data.text);
+                                break;
+
+                            case 'ANSWER_COMPLETE':
+                                finalizeCurrentAnswer(currentAnswer);
+                                stopRecording();
+                                break;
+
+                            case 'END':
+                                addQuestionToChat(data.question);
+                                if (data.audio) {
+                                    playAudio(data.audio);
+                                }
+                                displayReport(data.report);
+                                break;
+                        }
+                    } else if (response.success === false) {
+                        alert(`에러: ${response.message}`);
+                    }
+                } catch (e) {
+                    console.error('메시지 파싱 실패:', e);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket 오류:', error);
+            };
+
+            ws.onclose = (event) => {
+                updateStatus(false);
+                stopRecording();
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                stopRecording();
+                ws.close();
+                ws = null;
+            }
+        }
+
+        async function startRecording() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                audioContext = new AudioContext({ sampleRate: 16000 });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                processor.onaudioprocess = (e) => {
+                    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+                    const pcmData = e.inputBuffer.getChannelData(0);
+                    const int16Data = new Int16Array(pcmData.length);
+
+                    for (let i = 0; i < pcmData.length; i++) {
+                        int16Data[i] = Math.max(-32768, Math.min(32767, pcmData[i] * 32768));
+                    }
+
+                    ws.send(int16Data.buffer);
+                };
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+
+                isRecording = true;
+                updateStatus(true, true);
+            } catch (error) {
+                alert(`마이크 권한이 필요합니다: ${error.message}`);
+            }
+        }
+
+        function stopRecording() {
+            if (processor) {
+                processor.disconnect();
+                processor = null;
+            }
+
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+
+            isRecording = false;
+            updateStatus(ws && ws.readyState === WebSocket.OPEN, false);
+        }
+
+        function playAudio(base64Audio) {
+            const byteString = atob(base64Audio);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+
+            const blob = new Blob([ab], { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(blob);
+
+            const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+            const audioPlayer = document.getElementById('audioPlayer');
+
+            audioPlayerContainer.classList.remove('hidden');
+            audioPlayer.innerHTML = '<audio controls class="w-full"></audio>';
+            const audioElement = audioPlayer.querySelector('audio');
+
+            audioElement.addEventListener('ended', () => {
+                audioPlayerContainer.classList.add('hidden');
+                if (ws && ws.readyState === WebSocket.OPEN && !processor) {
+                    startRecording();
+                }
+            });
+
+            audioElement.src = audioUrl;
+            audioElement.play().catch(err => console.error('오디오 재생 실패:', err));
+        }
+
+        function displayReport(report) {
+            const reportPanel = document.getElementById('reportPanel');
+            const reportDisplay = document.getElementById('reportDisplay');
+
+            reportPanel.classList.remove('hidden');
+
+            const competencyLabels = {
+                PROBLEM_SOLVING: '문제해결력',
+                COMMUNICATION: '의사소통능력',
+                TEAMWORK: '팀워크/협업',
+                ADAPTABILITY: '적응력/유연성',
+                INITIATIVE: '주도성'
+            };
+
+            reportDisplay.innerHTML = `
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-3">강점</h4>
+                    <ul class="list-disc list-inside text-sm text-gray-700 space-y-2">
+                        ${report.strengths.map(s => `<li>${s}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-3">개선점</h4>
+                    <ul class="list-disc list-inside text-sm text-gray-700 space-y-2">
+                        ${report.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-3">AI 종합 피드백</h4>
+                    <p class="text-sm text-gray-700 leading-relaxed">${report.aiFeedback}</p>
+                </div>
+
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4">역량 점수</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        ${Object.entries(report.competencyScores).map(([key, value]) => `
+                            <div class="bg-gray-100 border border-gray-200 rounded-lg p-4 text-center">
+                                <div class="text-xs text-gray-600 mb-2">${competencyLabels[key]}</div>
+                                <div class="text-3xl font-bold text-gray-900">${value}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        window.onload = () => {
+            console.log('페이지 준비 완료');
+        };
+
+        window.onbeforeunload = () => {
+            stopRecording();
+            if (ws) ws.close();
+        };
+    </script>
+</body>
+</html>
