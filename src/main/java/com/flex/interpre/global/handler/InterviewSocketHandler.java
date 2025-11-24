@@ -286,30 +286,31 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(interviewSession.getJobSeekerId());
 
         // 면접 임베딩 누적 (없으면 인터뷰 임베딩 사용)
-        List<Double> searchVector = (jobSeeker.getCumulativeEmbedding() != null && !jobSeeker.getCumulativeEmbedding().isEmpty())
-                ? jobSeeker.getCumulativeEmbedding()
-                : embedding;
-
+        List<Recruitment> finalRecommendations = new ArrayList<>(); // 최종 추천할 공고문리스트
         List<Double> newEmbedding = interview.getEmbedding();
 
         if (newEmbedding != null && !newEmbedding.isEmpty()) {
             List<Double> currentCumulative = jobSeeker.getCumulativeEmbedding();
             int oldCount = jobSeeker.getInterviews().size() - 1;
 
+            List<Double> updated;
             if (!currentCumulative.isEmpty() && oldCount > 0) {
-                List<Double> updated = IntStream.range(0, newEmbedding.size())
+                updated = IntStream.range(0, newEmbedding.size())
                         .mapToObj(i -> (currentCumulative.get(i) * oldCount + newEmbedding.get(i)) / (oldCount + 1))
                         .toList();
-                jobSeeker.setCumulativeEmbedding(updated);
             } else {
-                // 첫 인터뷰
-                jobSeeker.setCumulativeEmbedding(newEmbedding);
+                updated = newEmbedding; // 첫 인터뷰
             }
-            jobSeekerRepository.save(jobSeeker);
-        }
 
-        // AI 기반 리랭킹 추천
-        List<Recruitment> finalRecommendations = aiMatchingService.recommendForInterview(jobSeeker, searchVector);
+            jobSeeker.setCumulativeEmbedding(updated);
+            jobSeekerRepository.save(jobSeeker);
+
+            // searchVector <- 업데이트된 누적 벡터
+            List<Double> searchVector = updated;
+
+            // AI 기반 리랭킹 추천 호출
+            finalRecommendations = aiMatchingService.recommendForInterview(jobSeeker, searchVector);
+        }
 
         // 면접 리포트 저장
         InterviewReport interviewReport = InterviewReport.builder()
@@ -318,7 +319,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .strengths(analysisResult.strengths())
                 .weaknesses(analysisResult.weaknesses())
                 .competencyScores(analysisResult.competencyScores())
-                .recommendations(finalRecommendations)
+                .recommendations(finalRecommendations) // 추천 목록 반영
                 .build();
         interview.setInterviewReport(interviewReport);
 
