@@ -346,7 +346,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         interviewChatRepository.save(currentChat);
         
         Long duration = checkInterviewEnd(interviewSession);
-        if (duration >= 10) {
+        if (duration >= 1) {
             finishInterview(session, sessionId, transcription, duration);
             return;
         }
