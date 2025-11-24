@@ -14,9 +14,6 @@ public interface JobSeekerRepository extends JpaRepository<JobSeeker, UUID> {
     @Query("SELECT js FROM JobSeeker js LEFT JOIN FETCH js.interviews WHERE js.id = :id")
     JobSeeker findByIdWithInterviews(UUID id);
 
-    @Query("SELECT js FROM JobSeeker js LEFT JOIN FETCH js.bookmarkedRecruitments WHERE js.id = :id")
-    Optional<JobSeeker> findByIdWithBookmarks(UUID id);
-
 //    @Query("SELECT j FROM JobSeeker j JOIN FETCH j.user u WHERE j.user.id = :id")
 //    Optional<JobSeeker> findByUserIdWithUser(UUID id);
 //
