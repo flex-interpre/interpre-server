@@ -12,13 +12,13 @@ import org.springframework.stereotype.Component;
 public class ClovaProperty {
 
     @NotBlank
-    private String id;
+    private String sttSecret;
 
     @NotBlank
-    private String secret;
+    private String ttsClientId;
 
     @NotBlank
-    private String sttUrl;
+    private String ttsSecret;
 
     @NotBlank
     private String ttsUrl;

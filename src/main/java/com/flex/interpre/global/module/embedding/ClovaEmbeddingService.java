@@ -30,9 +30,6 @@ public class ClovaEmbeddingService {
     @Value("${naver.clova.url}")
     private String apiUrl;
 
-//    @Value("${naver.clova.api-key-id}")
-//    private String apiKeyId;
-
     @Value("${naver.clova.api-key}")
     private String apiKey;
 

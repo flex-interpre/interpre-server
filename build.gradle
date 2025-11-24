@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.google.protobuf' version '0.9.4'
 }
 
 group = 'com.flex'
@@ -26,54 +27,68 @@ repositories {
 }
 
 dependencies {
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'com.auth0:java-jwt:4.4.0'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    // Swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
-
-    //OAuth
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-
-    //Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    implementation 'com.auth0:java-jwt:4.4.0'
 
-    // DB
+    // Postgres
     implementation 'org.postgresql:postgresql'
-
-    // dotenv
-    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
-
-    // AWS
-    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
-
-    // PDFBox
-    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
-
-    // pgvector
     implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'com.pgvector:pgvector:0.1.4'
     implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.7.3'
-    
-    // opensearch
+
+    // OpenSearch
     implementation 'org.opensearch.client:opensearch-java:2.12.0'
     implementation 'org.opensearch.client:opensearch-rest-client:2.12.0'
+
+    // gRPC
+    implementation 'io.grpc:grpc-netty:1.76.0'
+    implementation 'io.grpc:grpc-protobuf:1.76.0'
+    implementation 'io.grpc:grpc-stub:1.76.0'
+    implementation 'com.google.protobuf:protobuf-java:4.33.0'
+
+    // Other
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+    implementation("software.amazon.awssdk:bedrockruntime:2.25.61")
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
     implementation 'jakarta.json:jakarta.json-api:2.1.2'
-    
-     implementation("software.amazon.awssdk:bedrockruntime:2.25.61")
+    implementation 'org.apache.lucene:lucene-analyzers-nori:8.11.4'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:4.33.0'
+    }
+
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.76.0'
+        }
+    }
+
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
 }

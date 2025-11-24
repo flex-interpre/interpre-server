@@ -15,11 +15,15 @@ import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
-import com.flex.interpre.global.dto.ApiResponse;
 import com.flex.interpre.global.exception.ApiException;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
+import com.flex.interpre.global.module.stt.ClovaGrpcSttService;
+import com.flex.interpre.global.util.KoreanTextProcessor;
+import com.naver.cloud.speech.grpc.NestRequest;
+import io.grpc.stub.StreamObserver;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.BinaryMessage;
@@ -29,19 +33,18 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class InterviewSocketHandler extends AbstractWebSocketHandler {
     
     private final InterviewSessionRepository interviewSessionRepository;
@@ -50,10 +53,19 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final QnaRepository qnaRepository;
     private final InterviewRepository interviewRepository;
     private final InterviewService interviewService;
-    private final ConcurrentHashMap<String, List<byte[]>> audioChunksMap = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final RecruitmentIndexService recruitmentIndexService;
+    private final ClovaGrpcSttService clovaGrpcSttService;
     private final JobSeekerRepository jobSeekerRepository;
+    private final KoreanTextProcessor koreanTextProcessor;
+
+    private final ConcurrentHashMap<String, StreamObserver<NestRequest>> grpcStreamMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, StringBuilder> transcriptionBufferMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ScheduledFuture<?>> answerCheckTimers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ScheduledFuture<?>> forceCompleteTimers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> currentQuestions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> answerProcessed = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
     
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
@@ -69,195 +81,242 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             }
             
             String document = interviewSession.getContentText();
-            
-            audioChunksMap.put(session.getId(), new ArrayList<>());
-            
-            // 인터뷰 시작 질문 생성
+
+            StreamObserver<NestRequest> grpcStream = clovaGrpcSttService.startStreaming(
+                    session,
+                    (text) -> {
+                        try {
+                            String wsSessionId = session.getId();
+                            transcriptionBufferMap.computeIfAbsent(wsSessionId, k -> new StringBuilder()).append(text).append(" ");
+
+                            String rawText = transcriptionBufferMap.get(wsSessionId).toString().trim();
+                            String correctedText = koreanTextProcessor.correctSpacing(rawText);
+
+                            InterviewResponse realtimeStt = InterviewResponse.builder()
+                                    .type(InterviewResponse.ResponseType.STT)
+                                    .text(correctedText)
+                                    .build();
+                            sendSuccess(session, realtimeStt);
+
+                            cancelAnswerCheckTimer(wsSessionId);
+                            cancelForceCompleteTimer(wsSessionId);
+
+                            answerProcessed.put(wsSessionId, false);
+
+                            ScheduledFuture<?> checkTimer = scheduler.schedule(() -> {
+                                log.info("1.5초 타이머 만료 - AI 답변 완료 판단 시작");
+                                checkAndProcessAnswer(session, sessionId);
+                            }, 1500, TimeUnit.MILLISECONDS);
+                            answerCheckTimers.put(wsSessionId, checkTimer);
+
+                            ScheduledFuture<?> forceTimer = scheduler.schedule(() -> {
+                                log.info("5초 타이머 만료 - 강제 답변 종료");
+                                forceCompleteAnswer(session, sessionId);
+                            }, 5000, TimeUnit.MILLISECONDS);
+                            forceCompleteTimers.put(wsSessionId, forceTimer);
+
+                        } catch (Exception e) {
+                            log.error("실시간 STT 전송 오류: {}", e.getMessage(), e);
+                        }
+                    }
+            );
+
+            clovaGrpcSttService.sendConfig(grpcStream);
+
+            grpcStreamMap.put(session.getId(), grpcStream);
+            transcriptionBufferMap.put(session.getId(), new StringBuilder());
+
             String firstQuestion = interviewService.generateQuestions(document, new ArrayList<>());
+
+            currentQuestions.put(session.getId(), firstQuestion);
             byte[] questionAudio = interviewService.tts(firstQuestion);
             String audioBase64 = Base64.getEncoder().encodeToString(questionAudio);
-            
-            //중간 질의응답 저장 용
+
             InterviewChat interviewChat = InterviewChat.builder()
                     .interviewId(interviewSession.getInterviewId())
                     .questionNum(1)
                     .question(firstQuestion)
                     .answer(null)
                     .build();
-            
+
             interviewChatRepository.save(interviewChat);
-            
-            //redis session에 자소서 및 질문 넘버 저장
+
             interviewSession.setContentText(document);
             interviewSession.setCurrentQuestionNum(1);
             interviewSessionRepository.save(interviewSession);
-            
+
             InterviewResponse interviewResponse = InterviewResponse.builder()
-                    .transcription(null)
+                    .type(InterviewResponse.ResponseType.QUESTION)
                     .question(firstQuestion)
                     .audio(audioBase64)
-                    .questionNumber(1)
-                    .interviewReport(null)
-                    .isFinal(false)
                     .build();
-            
-            sendResponse(session, ApiResponse.ok(interviewResponse));
+
+            sendSuccess(session, interviewResponse);
             
             
         } catch (ApiException e) {
-            
-            session.close(CloseStatus.NOT_ACCEPTABLE.withReason(e.getMessage()));
+            log.error("연결 수립 오류 (ApiException): {}", e.getMessage(), e);
+            sendError(session, e.getMessage());
+            session.close(CloseStatus.NOT_ACCEPTABLE);
         } catch (Exception e) {
-            
-            session.close(CloseStatus.SERVER_ERROR.withReason("서버 에러 발생"));
+            log.error("연결 수립 오류: {}", e.getMessage(), e);
+            sendError(session, "서버 에러 발생: " + e.getMessage());
+            session.close(CloseStatus.SERVER_ERROR);
         }
-        
-        
     }
     
     @Override
-    public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message)
-            throws IOException {
-        
+    public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message) {
         try {
             String wsSessionId = session.getId();
-            
-            ByteBuffer byteBuffer = message.getPayload();
-            byte[] audioChunk = new byte[byteBuffer.remaining()];
-            byteBuffer.get(audioChunk);
-            
-            // 청크를 리스트에 추가
-            List<byte[]> chunks = audioChunksMap.get(wsSessionId);
-            if (chunks != null) {
-                chunks.add(audioChunk);
-                
+            StreamObserver<NestRequest> grpcStream = grpcStreamMap.get(wsSessionId);
+
+            if (grpcStream != null) {
+                byte[] audioChunk = message.getPayload().array();
+                clovaGrpcSttService.sendAudioData(grpcStream, audioChunk);
             } else {
-                session.close(CloseStatus.SERVER_ERROR.withReason("서버 에러 발생"));
+                log.warn("gRPC 스트림을 찾을 수 없음: {}", wsSessionId);
             }
         } catch (Exception e) {
-            session.close(CloseStatus.SERVER_ERROR.withReason("오디오 처리중 에러 발생"));
+            log.error("오디오 처리 오류: {}", e.getMessage(), e);
         }
     }
-    
+
     @Override
-    @Transactional
-    public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws IOException {
-        
-        try {
-            //웹소켓 id
-            String wsSessionId = session.getId();
-            // redis에 저장한 sessionID
-            String sessionId = getSessionId(session);
-            String payload = message.getPayload();
-            
-            // JSON 파싱, 종료 요청이 오는 경우
-            if (payload.contains("\"type\":\"END\"")) {
-                List<byte[]> chunks = audioChunksMap.get(wsSessionId);
-                
-                if (chunks == null || chunks.isEmpty()) {
-                    sendResponse(session, ApiResponse.error(InterviewExceptions.NO_AUDIO_DATA.toException()));
-                    return;
-                }
-                
-                // 프론트에서 받은 PCM 합치기
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                for (byte[] chunk : chunks) {
-                    outputStream.write(chunk);
-                }
-                byte[] mergedPcm = outputStream.toByteArray();
-                
-                // PCM → WAV 변환 (16kHz, mono, 16bit)
-                byte[] wavData = addWavHeader(mergedPcm);
-                
-                // STT 실행
-                String transcription = interviewService.transcribe(wavData);
-                // 다음 요청을 위해 지우기
-                chunks.clear();
-                
-                sendQuestion(session, sessionId, transcription);
+    public void afterConnectionClosed(WebSocketSession session, @NonNull CloseStatus status) throws Exception {
+        String wsSessionId = session.getId();
+
+        cancelAnswerCheckTimer(wsSessionId);
+        cancelForceCompleteTimer(wsSessionId);
+
+        StreamObserver<NestRequest> grpcStream = grpcStreamMap.remove(wsSessionId);
+        if (grpcStream != null) {
+            try {
+                grpcStream.onCompleted();
+            } catch (Exception e) {
+                log.warn("gRPC 스트림 종료 오류: {}", e.getMessage());
             }
-            
-        } catch (ApiException e) {
-            sendResponse(session, ApiResponse.error(e));
-        } catch (Exception e) {
-            e.printStackTrace();
-            session.close(CloseStatus.SERVER_ERROR.withReason("질문 생성 중 에러 발생"));
+        }
+
+        transcriptionBufferMap.remove(wsSessionId);
+        currentQuestions.remove(wsSessionId);
+        answerProcessed.remove(wsSessionId);
+    }
+
+    private void cancelAnswerCheckTimer(String wsSessionId) {
+        ScheduledFuture<?> existingTimer = answerCheckTimers.remove(wsSessionId);
+        if (existingTimer != null && !existingTimer.isDone()) {
+            existingTimer.cancel(false);
         }
     }
-    
-    //맨앞에 WAV 헤더 붙히기
-    private byte[] addWavHeader(byte[] pcmData) {
-        
-        int byteRate = 16000 * 16 / 8;
-        int dataSize = pcmData.length;
-        
-        byte[] header = new byte[44];
-        // ChunkID "RIFF"
-        header[0] = 'R';
-        header[1] = 'I';
-        header[2] = 'F';
-        header[3] = 'F';
-        // ChunkSize
-        int chunkSize = 36 + dataSize;
-        header[4] = (byte) (chunkSize & 0xff);
-        header[5] = (byte) ((chunkSize >> 8) & 0xff);
-        header[6] = (byte) ((chunkSize >> 16) & 0xff);
-        header[7] = (byte) ((chunkSize >> 24) & 0xff);
-        // Format "WAVE"
-        header[8] = 'W';
-        header[9] = 'A';
-        header[10] = 'V';
-        header[11] = 'E';
-        // Subchunk1ID "fmt "
-        header[12] = 'f';
-        header[13] = 'm';
-        header[14] = 't';
-        header[15] = ' ';
-        // Subchunk1Size (16 for PCM)
-        header[16] = 16;
-        header[17] = 0;
-        header[18] = 0;
-        header[19] = 0;
-        // AudioFormat (1 for PCM)
-        header[20] = 1;
-        header[21] = 0;
-        // NumChannels
-        header[22] = (byte) 1;
-        header[23] = 0;
-        // SampleRate
-        header[24] = (byte) (16000 & 0xff);
-        header[25] = (byte) ((16000 >> 8) & 0xff);
-        header[26] = (byte) ((16000 >> 16) & 0xff);
-        header[27] = (byte) ((16000 >> 24) & 0xff);
-        // ByteRate
-        header[28] = (byte) (0);
-        header[29] = (byte) ((byteRate >> 8) & 0xff);
-        header[30] = (byte) (0);
-        header[31] = (byte) (0);
-        // BlockAlign
-        int blockAlign = 2;
-        header[32] = (byte) (blockAlign & 0xff);
-        header[33] = (byte) (0);
-        // BitsPerSample
-        header[34] = (byte) 16;
-        header[35] = 0;
-        // Subchunk2ID "data"
-        header[36] = 'd';
-        header[37] = 'a';
-        header[38] = 't';
-        header[39] = 'a';
-        // Subchunk2Size
-        header[40] = (byte) (dataSize & 0xff);
-        header[41] = (byte) ((dataSize >> 8) & 0xff);
-        header[42] = (byte) ((dataSize >> 16) & 0xff);
-        header[43] = (byte) ((dataSize >> 24) & 0xff);
-        
-        // 합치기
-        byte[] wavData = new byte[header.length + pcmData.length];
-        System.arraycopy(header, 0, wavData, 0, header.length);
-        System.arraycopy(pcmData, 0, wavData, header.length, pcmData.length);
-        
-        return wavData;
+
+    private void cancelForceCompleteTimer(String wsSessionId) {
+        ScheduledFuture<?> existingTimer = forceCompleteTimers.remove(wsSessionId);
+        if (existingTimer != null && !existingTimer.isDone()) {
+            existingTimer.cancel(false);
+        }
+    }
+
+    private void sendSuccess(WebSocketSession session, Object data) throws IOException {
+        String json = objectMapper.writeValueAsString(
+                Map.of("success", true, "data", data)
+        );
+        session.sendMessage(new TextMessage(json));
+    }
+
+    private void sendError(WebSocketSession session, String message) throws IOException {
+        String json = objectMapper.writeValueAsString(
+                Map.of("success", false, "message", message)
+        );
+        session.sendMessage(new TextMessage(json));
+    }
+
+    private void checkAndProcessAnswer(WebSocketSession session, String sessionId) {
+        try {
+            String wsSessionId = session.getId();
+
+            if (Boolean.TRUE.equals(answerProcessed.get(wsSessionId))) {
+                return;
+            }
+
+            String currentQuestion = currentQuestions.get(wsSessionId);
+            if (currentQuestion == null) {
+                log.warn("현재 질문을 찾을 수 없음: {}", wsSessionId);
+                return;
+            }
+
+            StringBuilder buffer = transcriptionBufferMap.get(wsSessionId);
+            String rawAnswer = buffer != null ? buffer.toString().trim() : "";
+
+            if (rawAnswer.isEmpty()) {
+                return;
+            }
+
+            String currentAnswer = koreanTextProcessor.correctSpacing(rawAnswer);
+
+            boolean isComplete = interviewService.isAnswerComplete(currentQuestion, currentAnswer);
+
+            if (isComplete) {
+                log.info("AI 판단: 답변 완료 - 다음 질문 생성 시작");
+
+                answerProcessed.put(wsSessionId, true);
+
+                cancelAnswerCheckTimer(wsSessionId);
+                cancelForceCompleteTimer(wsSessionId);
+
+                InterviewResponse answerCompleteSignal = InterviewResponse.builder()
+                        .type(InterviewResponse.ResponseType.ANSWER_COMPLETE)
+                        .build();
+                sendSuccess(session, answerCompleteSignal);
+
+                transcriptionBufferMap.put(wsSessionId, new StringBuilder());
+
+                sendQuestion(session, sessionId, currentAnswer);
+            }
+
+        } catch (Exception e) {
+            log.error("답변 완료 확인 오류: {}", e.getMessage(), e);
+        }
+    }
+
+    private void forceCompleteAnswer(WebSocketSession session, String sessionId) {
+        try {
+            String wsSessionId = session.getId();
+
+            if (Boolean.TRUE.equals(answerProcessed.get(wsSessionId))) {
+                log.info("5초 타이머 만료했지만 이미 질문 생성됨 - 스킵");
+                return;
+            }
+
+            StringBuilder buffer = transcriptionBufferMap.get(wsSessionId);
+            String rawAnswer = buffer != null ? buffer.toString().trim() : "";
+
+            if (rawAnswer.isEmpty()) {
+                log.warn("5초 타이머 만료했지만 답변이 없음");
+                return;
+            }
+
+            log.info("5초 타이머 만료 - 강제 답변 종료 처리");
+
+            answerProcessed.put(wsSessionId, true);
+
+            String currentAnswer = koreanTextProcessor.correctSpacing(rawAnswer);
+
+            cancelAnswerCheckTimer(wsSessionId);
+            cancelForceCompleteTimer(wsSessionId);
+
+            InterviewResponse answerCompleteSignal = InterviewResponse.builder()
+                    .type(InterviewResponse.ResponseType.ANSWER_COMPLETE)
+                    .build();
+            sendSuccess(session, answerCompleteSignal);
+
+            transcriptionBufferMap.put(wsSessionId, new StringBuilder());
+
+            sendQuestion(session, sessionId, currentAnswer);
+
+        } catch (Exception e) {
+            log.error("강제 답변 종료 오류: {}", e.getMessage(), e);
+        }
     }
     
     private String getSessionId(WebSocketSession session) {
@@ -268,12 +327,6 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .build()
                 .getQueryParams()
                 .getFirst("sessionId");
-    }
-    
-    private <T> void sendResponse(WebSocketSession session, ApiResponse<T> response) throws IOException {
-        
-        String json = objectMapper.writeValueAsString(response);
-        session.sendMessage(new TextMessage(json));
     }
     
     @Transactional
@@ -292,46 +345,41 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         currentChat.setAnswer(transcription);
         interviewChatRepository.save(currentChat);
         
-        // 인터뷰 결과 10분 이상이면 종료
         Long duration = checkInterviewEnd(interviewSession);
         if (duration >= 1) {
             finishInterview(session, sessionId, transcription, duration);
             return;
         }
-        
-        //채팅 기록 불러오기
+
         List<InterviewChat> chatHistory = interviewChatRepository
                 .findByInterviewIdOrderByQuestionNum(interviewId);
-        
-        //다음 질문 생성
+
         String nextQuestion = interviewService.generateQuestions(interviewSession.getContentText(), chatHistory);
-        
+
         InterviewChat nextChat = InterviewChat.builder()
                 .interviewId(interviewId)
                 .questionNum(currentQuestionNumber + 1)
                 .question(nextQuestion)
                 .answer(null)
                 .build();
-        
+
         interviewChatRepository.save(nextChat);
-        
-        //세션의 현재 질문 번호 저장
+
         interviewSession.setCurrentQuestionNum(currentQuestionNumber + 1);
         interviewSessionRepository.save(interviewSession);
-        
+
+        currentQuestions.put(session.getId(), nextQuestion);
+
         byte[] AudioData = interviewService.tts(nextQuestion);
         String audioBase64 = Base64.getEncoder().encodeToString(AudioData);
-        
+
         InterviewResponse response = InterviewResponse.builder()
-                .transcription(transcription)
+                .type(InterviewResponse.ResponseType.QUESTION)
                 .question(nextQuestion)
                 .audio(audioBase64)
-                .questionNumber(currentQuestionNumber + 1)
-                .interviewReport(null)
-                .isFinal(false)
                 .build();
-        
-        sendResponse(session, ApiResponse.ok(response));
+
+        sendSuccess(session, response);
         
         
     }
@@ -453,17 +501,15 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         
         byte[] audioData = interviewService.tts(closingMessage);
         String audioBase64 = Base64.getEncoder().encodeToString(audioData);
-        
+
         InterviewResponse response = InterviewResponse.builder()
-                .transcription(lastTranscription)
+                .type(InterviewResponse.ResponseType.END)
                 .question(closingMessage)
                 .audio(audioBase64)
-                .questionNumber(interviewSession.getCurrentQuestionNum())
-                .interviewReport(InterviewReportDto.from(interviewReport))
-                .isFinal(true)
+                .report(InterviewReportDto.from(interviewReport))
                 .build();
-        
-        sendResponse(session, ApiResponse.ok(response));
+
+        sendSuccess(session, response);
         
         interviewChatRepository.deleteAll(chatHistory);
         interviewSessionRepository.delete(interviewSession);
