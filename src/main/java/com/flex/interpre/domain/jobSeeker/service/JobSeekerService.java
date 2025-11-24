@@ -25,30 +25,4 @@ public class JobSeekerService {
 
         return MyJobSeekerInfo.from(jobSeeker);
     }
-
-    @Transactional(readOnly = true)
-    public List<RecruitmentSummaryResponse> getBookmarks(JobSeeker jobSeeker) {
-        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
-                .orElseThrow();
-
-        return jobSeekerWithBookmarks.getBookmarkedRecruitments().stream().map(RecruitmentSummaryResponse::from).toList();
-    }
-
-    @Transactional
-    public void addBookmark(JobSeeker jobSeeker, Recruitment recruitment) {
-        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
-                .orElseThrow();
-
-        jobSeekerWithBookmarks.getBookmarkedRecruitments().add(recruitment);
-        jobSeekerRepository.save(jobSeekerWithBookmarks);
-    }
-
-    @Transactional
-    public void deleteBookmark(JobSeeker jobSeeker, Recruitment recruitment) {
-        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
-                .orElseThrow();
-
-        jobSeekerWithBookmarks.getBookmarkedRecruitments().remove(recruitment);
-        jobSeekerRepository.save(jobSeekerWithBookmarks);
-    }
 }

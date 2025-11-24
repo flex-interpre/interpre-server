@@ -93,14 +93,22 @@ public class JobSeeker implements AccountPrincipal {
     @Column(name = "job_third")
     @Builder.Default
     private Set<JobThird> jobThirds = new HashSet<>();
-    
-    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
-    List<Interview> interviews;
+
+    // 자소서/포트폴리오
     @Builder.Default
     @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
     private Set<Document> documents = new HashSet<>();
-    
-    
+
+    // 면접
+    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
+    List<Interview> interviews;
+
+    // 면접 누적 임베딩
+    @Column(name = "cumulative_embedding")
+    @Builder.Default
+    private List<Double> cumulativeEmbedding = new ArrayList<>();
+
+
     // 구직자 메서드
     
     // 인증용 role 반환
@@ -117,18 +125,4 @@ public class JobSeeker implements AccountPrincipal {
         this.jobSeconds = request.jobSeconds();
         this.jobThirds = request.jobThirds();
     }
-    
-    @ManyToMany
-    @JoinTable(
-            name = "job_seeker_bookmarks",
-            joinColumns = @JoinColumn(name = "job_seeker_id"),
-            inverseJoinColumns = @JoinColumn(name = "recruitment_id")
-    )
-    @Builder.Default
-    private Set<Recruitment> bookmarkedRecruitments = new HashSet<>();
-    
-    @Column(name = "cumulative_embedding")
-    @Builder.Default
-    private List<Double> cumulativeEmbedding = new ArrayList<>();
-    
 }
