@@ -7,6 +7,7 @@ import com.flex.interpre.domain.interview.dto.response.InterviewResponse;
 import com.flex.interpre.domain.interview.entity.*;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewChatRepository;
+import com.flex.interpre.domain.interview.repository.InterviewReportRepository;
 import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.interview.repository.QnaRepository;
@@ -57,6 +58,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final JobSeekerProfileVectorService jobSeekerProfileVectorService;
     private final ClovaGrpcSttService clovaGrpcSttService;
     private final JobSeekerRepository jobSeekerRepository;
+    private final InterviewReportRepository interviewReportRepository;
     private final KoreanTextProcessor koreanTextProcessor;
     private final AIMatchingService aiMatchingService;
 

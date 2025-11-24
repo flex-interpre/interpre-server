@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum Competency {
 
     PROBLEM_SOLVING(
-            "문제해결력"
+            "문제해결능력"
     ),
 
     COMMUNICATION(
@@ -16,15 +16,15 @@ public enum Competency {
     ),
 
     TEAMWORK(
-            "팀워크/협업"
+            "대인관계능력/협업"
     ),
 
     ADAPTABILITY(
-            "적응력/유연성"
+            "조직이해능력/적응력"
     ),
 
     INITIATIVE(
-            "주도성/자기주도성"
+            "자기개발능력/주도성"
     );
 
     private final String mean;

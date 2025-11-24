@@ -41,7 +41,8 @@ public class InterviewReport {
     @Column(name = "ai_feedback", columnDefinition = "TEXT")
     private String aiFeedback;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "interview_report_id")
     @Builder.Default
     private List<Recruitment> recommendations = new ArrayList<>();
 
