@@ -3,7 +3,6 @@ package com.flex.interpre.domain.jobSeeker.entity;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.jobSeeker.dto.UpdateMyJobSeekerInfo;
-import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.global.constant.*;
 import com.flex.interpre.global.security.authentication.AccountPrincipal;
 import jakarta.persistence.*;
@@ -107,6 +106,11 @@ public class JobSeeker implements AccountPrincipal {
     @Column(name = "cumulative_embedding")
     @Builder.Default
     private List<Double> cumulativeEmbedding = new ArrayList<>();
+
+    // 구직자 프로필 벡터 (면접+북마크+피드백+온보딩)
+    @Column(name = "job_seeker_profile_embedding")
+    @Builder.Default
+    private List<Double> profileEmbedding = new ArrayList<>();
 
 
     // 구직자 메서드
