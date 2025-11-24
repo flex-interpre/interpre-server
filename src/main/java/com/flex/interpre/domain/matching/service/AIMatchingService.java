@@ -26,14 +26,14 @@ public class AIMatchingService {
     private static final int DEFAULT_K = 40; // k 기본값 설정
 
     // // 인터뷰 벡터로 OpenSearch KNN -> 후보군 추출 (면접 종료 후 호출됨)
-    public List<Recruitment> recommendForInterview(JobSeeker js, List<Double> interviewVector) throws IOException {
+    public List<Recruitment> recommendForInterview(JobSeeker js, List<Double> interviewVector) {
         List<Recruitment> candidates = recruitmentIndexService.searchByVector(interviewVector, DEFAULT_K);
 
         return rerank(js, candidates); // 리랭킹하여 반환
     }
 
     // 일반 추천 (프로필 벡터 기반)
-    public List<Recruitment> recommend(JobSeeker js) throws IOException {
+    public List<Recruitment> recommend(JobSeeker js) {
         List<Double> vec = js.getProfileEmbedding(); // 구직자 프로필 벡터
         if (vec == null || vec.isEmpty())   return Collections.emptyList();
 
