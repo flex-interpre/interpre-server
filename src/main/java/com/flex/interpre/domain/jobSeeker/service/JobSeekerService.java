@@ -18,10 +18,14 @@ import java.util.List;
 @PreAuthorize("hasRole('JOB_SEEKER')")
 public class JobSeekerService {
     private final JobSeekerRepository jobSeekerRepository;
+    private final JobSeekerProfileVectorService jobSeekerProfileVectorService;
 
     @Transactional
     public MyJobSeekerInfo updateMyInfo(JobSeeker jobSeeker, UpdateMyJobSeekerInfo request) {
         jobSeeker.update(request);
+
+        // 온보딩 기반 벡터 반영
+        jobSeekerProfileVectorService.updateProfileEmbedding(jobSeeker.getId());
 
         return MyJobSeekerInfo.from(jobSeeker);
     }

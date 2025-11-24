@@ -165,33 +165,35 @@ public class RecruitmentIndexService {
     }
 
     // 오픈서치에서 공고문 ID-> 해당 공고 임베딩 조회
-    public Map<UUID, List<Double>> getEmbeddingsByIds(List<UUID> ids) throws IOException {
-        if (ids.isEmpty()) return Map.of();
+    public Map<UUID, List<Double>> getEmbeddingsByIds(List<UUID> ids) {
+        try {
+            // UUID->FieldValue로 변환
+            List<FieldValue> fieldValues = ids.stream().map(UUID::toString).map(FieldValue::of).toList();
 
-        // UUID->FieldValue로 변환
-        List<FieldValue> fieldValues = ids.stream().map(UUID::toString).map(FieldValue::of).toList();
+            SearchResponse<RecruitmentDocumentIndex> response = client.search(s -> s
+                            .index(INDEX_NAME)
+                            .size(ids.size())
+                            .query(q -> q.terms(t -> t
+                                    .field("_id")
+                                    .terms(tt -> tt.value(fieldValues))
+                            ))
+                            .source(src -> src.filter(f -> f.includes("embedding"))),
+                    RecruitmentDocumentIndex.class
+            );
 
-        SearchResponse<RecruitmentDocumentIndex> response = client.search(s -> s
-                        .index(INDEX_NAME)
-                        .size(ids.size())
-                        .query(q -> q.terms(t -> t
-                                .field("_id")
-                                .terms(tt -> tt.value(fieldValues))
-                        ))
-                        .source(src -> src.filter(f -> f.includes("embedding"))),
-                RecruitmentDocumentIndex.class
-        );
+            Map<UUID, List<Double>> result = new HashMap<>();
 
-        Map<UUID, List<Double>> map = new HashMap<>();
+            response.hits().hits().forEach(hit -> {
+                UUID id = UUID.fromString(hit.id());
+                List<Double> embedding = hit.source().getEmbedding();
+                result.put(id, embedding);
+            });
 
-        for (Hit<RecruitmentDocumentIndex> hit : response.hits().hits()) {
-            RecruitmentDocumentIndex doc = hit.source();
-            if (doc != null && doc.getEmbedding() != null) {
-                map.put(UUID.fromString(hit.id()), doc.getEmbedding());
-            }
+            return result;
+
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to fetch embeddings from OpenSearch", e);
         }
-
-        return map; // 공고문 map 반환
     }
 
 

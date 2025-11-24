@@ -1,8 +1,9 @@
-package com.flex.interpre.domain.matching;
+package com.flex.interpre.domain.matching.service;
 
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.repository.BookmarkRepository;
 import com.flex.interpre.domain.jobSeeker.repository.RecommendationFeedbackRepository;
+import com.flex.interpre.domain.matching.MatchingScoreCalculator;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import lombok.RequiredArgsConstructor;

@@ -22,6 +22,7 @@ import java.util.UUID;
 public class BookmarkService {
     private final BookmarkRepository bookmarkRepository;
     private final RecruitmentRepository recruitmentRepository;
+    private final JobSeekerProfileVectorService jobSeekerProfileVectorService;
 
     // 북마크 추가
     @Transactional
@@ -38,6 +39,9 @@ public class BookmarkService {
                 );
         bookmark.setLiked(true);
         bookmarkRepository.save(bookmark);
+
+        // 북마크 구직자 프로필 벡터 업데이트
+        jobSeekerProfileVectorService.updateProfileEmbedding(jobSeeker.getId());
     }
 
     // 북마크 삭제
@@ -47,6 +51,9 @@ public class BookmarkService {
 
         bookmark.setLiked(false);
         bookmarkRepository.save(bookmark);
+
+        // 북마크 구직자 프로필 벡터 업데이트
+        jobSeekerProfileVectorService.updateProfileEmbedding(jobSeeker.getId());
     }
 
     // 북마크 공고 목록 조회

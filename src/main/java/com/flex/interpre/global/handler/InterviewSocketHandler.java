@@ -13,9 +13,9 @@ import com.flex.interpre.domain.interview.repository.QnaRepository;
 import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
-import com.flex.interpre.domain.matching.AIMatchingService;
+import com.flex.interpre.domain.jobSeeker.service.JobSeekerProfileVectorService;
+import com.flex.interpre.domain.matching.service.AIMatchingService;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import com.flex.interpre.global.exception.ApiException;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import com.flex.interpre.global.module.stt.ClovaGrpcSttService;
@@ -54,7 +54,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final InterviewRepository interviewRepository;
     private final InterviewService interviewService;
     private final ObjectMapper objectMapper;
-    private final RecruitmentIndexService recruitmentIndexService;
+    private final JobSeekerProfileVectorService jobSeekerProfileVectorService;
     private final ClovaGrpcSttService clovaGrpcSttService;
     private final JobSeekerRepository jobSeekerRepository;
     private final KoreanTextProcessor koreanTextProcessor;
@@ -311,6 +311,9 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             // AI 기반 리랭킹 추천 호출
             finalRecommendations = aiMatchingService.recommendForInterview(jobSeeker, searchVector);
         }
+
+        // 면접 누적 벡터 -> 구직자 프로필 벡터 업데이트
+        jobSeekerProfileVectorService.updateProfileEmbedding(jobSeeker.getId());
 
         // 면접 리포트 저장
         InterviewReport interviewReport = InterviewReport.builder()

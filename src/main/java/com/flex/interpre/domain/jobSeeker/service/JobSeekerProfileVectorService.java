@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -32,7 +31,7 @@ public class JobSeekerProfileVectorService {
 
     // 프로필 벡터 업데이트
     @Transactional
-    public void updateProfileEmbedding(UUID jobSeekerId) throws IOException {
+    public void updateProfileEmbedding(UUID jobSeekerId){
         JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(jobSeekerId);
 
         List<Double> interviewVector = jobSeeker.getCumulativeEmbedding(); // 1 면접 누적 벡터
@@ -69,7 +68,7 @@ public class JobSeekerProfileVectorService {
 
 
     // OpenSearch에서 벡터 평균
-    private List<Double> averageFromOpenSearch(List<UUID> ids) throws IOException {
+    private List<Double> averageFromOpenSearch(List<UUID> ids) {
         if (ids.isEmpty()) return emptyVector();
 
         Map<UUID, List<Double>> result = recruitmentIndexService.getEmbeddingsByIds(ids); // 임베딩 가져옴
