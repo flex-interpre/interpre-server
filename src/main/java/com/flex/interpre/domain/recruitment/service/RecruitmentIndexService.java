@@ -4,13 +4,13 @@ import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.recruitment.index.RecruitmentDocumentIndex;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch._types.query_dsl.KnnQuery;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.BulkRequest;
@@ -21,19 +21,16 @@ import org.opensearch.client.opensearch.core.bulk.BulkOperation;
 import org.opensearch.client.opensearch.core.search.Hit;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecruitmentIndexService {
-
     private final OpenSearchClient client;
     private final ClovaEmbeddingService clovaEmbeddingService;
 
-    private static final String INDEX_NAME = "recruitments";
+    private static final String INDEX_NAME = "recruitments"; // 인덱스 문서 이름
 
-    // 공고문 인덱싱
+    // 공고문 단건 인덱싱
     public void indexRecruitment(Recruitment recruitment) throws IOException {
         String textToEmbed = buildFullText(recruitment); // 공고문 전체 텍스트 구성
         List<Double> embedding = clovaEmbeddingService.embed(textToEmbed);
@@ -70,6 +67,7 @@ public class RecruitmentIndexService {
         log.info("Indexed recruitment [{}] → docId={}", recruitment.getId(), response.id());
     }
 
+    // 공고문 데이터 벌크 인덱싱
     public void bulkIndexRecruitments(List<Recruitment> recruitments) throws Exception {
 
         final int BULK_SIZE = 100; // t3.small
@@ -135,7 +133,7 @@ public class RecruitmentIndexService {
                 .toList();
     }
 
-
+    // 키워드로 검색
     @SneakyThrows
     public List<UUID> searchIdsByKeyword(String keyword, String excludeKeyword, Set<String> fields){
         if (keyword == null || keyword.isBlank()) return List.of();
@@ -165,6 +163,39 @@ public class RecruitmentIndexService {
                 .map(hit -> UUID.fromString(hit.source().getId().toString()))
                 .toList();
     }
+
+    // 오픈서치에서 공고문 ID-> 해당 공고 임베딩 조회
+    public Map<UUID, List<Double>> getEmbeddingsByIds(List<UUID> ids) throws IOException {
+        if (ids.isEmpty()) return Map.of();
+
+        // UUID->FieldValue로 변환
+        List<FieldValue> fieldValues = ids.stream().map(UUID::toString).map(FieldValue::of).toList();
+
+        SearchResponse<RecruitmentDocumentIndex> response = client.search(s -> s
+                        .index(INDEX_NAME)
+                        .size(ids.size())
+                        .query(q -> q.terms(t -> t
+                                .field("_id")
+                                .terms(tt -> tt.value(fieldValues))
+                        ))
+                        .source(src -> src.filter(f -> f.includes("embedding"))),
+                RecruitmentDocumentIndex.class
+        );
+
+        Map<UUID, List<Double>> map = new HashMap<>();
+
+        for (Hit<RecruitmentDocumentIndex> hit : response.hits().hits()) {
+            RecruitmentDocumentIndex doc = hit.source();
+            if (doc != null && doc.getEmbedding() != null) {
+                map.put(UUID.fromString(hit.id()), doc.getEmbedding());
+            }
+        }
+
+        return map; // 공고문 map 반환
+    }
+
+
+    // 내부 메서드 //
 
     private void sendBulk(List<Recruitment> recruitments) throws Exception {
 
@@ -232,7 +263,6 @@ public class RecruitmentIndexService {
 
         log.info("Bulk {}건 처리 완료", recruitments.size());
     }
-
 
     // 공고문 전체 텍스트 생성 (임베딩용)
     private String buildFullText(Recruitment recruitment) {
