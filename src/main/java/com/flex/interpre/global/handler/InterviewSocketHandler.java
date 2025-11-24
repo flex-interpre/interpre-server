@@ -7,6 +7,7 @@ import com.flex.interpre.domain.interview.dto.response.InterviewResponse;
 import com.flex.interpre.domain.interview.entity.*;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewChatRepository;
+import com.flex.interpre.domain.interview.repository.InterviewReportRepository;
 import com.flex.interpre.domain.interview.repository.InterviewRepository;
 import com.flex.interpre.domain.interview.repository.InterviewSessionRepository;
 import com.flex.interpre.domain.interview.repository.QnaRepository;
@@ -57,6 +58,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final RecruitmentIndexService recruitmentIndexService;
     private final ClovaGrpcSttService clovaGrpcSttService;
     private final JobSeekerRepository jobSeekerRepository;
+    private final InterviewReportRepository interviewReportRepository;
     private final KoreanTextProcessor koreanTextProcessor;
 
     private final ConcurrentHashMap<String, StreamObserver<NestRequest>> grpcStreamMap = new ConcurrentHashMap<>();
@@ -457,7 +459,13 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .limit(5)
                 .toList();
         
-        // 면접 리포트 생성
+        //전부 저장
+        qnaRepository.saveAll(qnas);
+
+        interview.setDurationSecond(duration);
+        interviewRepository.save(interview);
+
+        // 면접 리포트 생성 및 저장
         InterviewReport interviewReport = InterviewReport.builder()
                 .interview(interview)
                 .aiFeedback(analysisResult.aiFeedback())
@@ -466,13 +474,10 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .competencyScores(analysisResult.competencyScores())
                 .recommendations(finalRecommendations)
                 .build();
-        
+
+        interviewReportRepository.save(interviewReport);
+
         interview.setInterviewReport(interviewReport);
-        
-        //전부 저장
-        qnaRepository.saveAll(qnas);
-        
-        interview.setDurationSecond(duration);
         interviewRepository.save(interview);
         
         List<Double> newEmbedding = interview.getEmbedding();
