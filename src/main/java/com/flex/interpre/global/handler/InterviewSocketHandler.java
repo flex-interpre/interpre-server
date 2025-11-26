@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flex.interpre.domain.interview.dto.response.InterviewAnalysisResult;
 import com.flex.interpre.domain.interview.dto.response.InterviewReportDto;
 import com.flex.interpre.domain.interview.dto.response.InterviewResponse;
-import com.flex.interpre.domain.interview.entity.*;
+import com.flex.interpre.domain.interview.entity.Interview;
+import com.flex.interpre.domain.interview.entity.InterviewChat;
+import com.flex.interpre.domain.interview.entity.InterviewReport;
+import com.flex.interpre.domain.interview.entity.InterviewSession;
+import com.flex.interpre.domain.interview.entity.Qna;
 import com.flex.interpre.domain.interview.exception.InterviewExceptions;
 import com.flex.interpre.domain.interview.repository.InterviewChatRepository;
 import com.flex.interpre.domain.interview.repository.InterviewReportRepository;
@@ -23,6 +27,25 @@ import com.flex.interpre.global.module.stt.ClovaGrpcSttService;
 import com.flex.interpre.global.util.KoreanTextProcessor;
 import com.naver.cloud.speech.grpc.NestRequest;
 import io.grpc.stub.StreamObserver;
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,15 +57,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Component
 @RequiredArgsConstructor
@@ -69,20 +83,20 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final ConcurrentHashMap<String, String> currentQuestions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> answerProcessed = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
-    
+
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
-        
+
         String sessionId = getSessionId(session);
         try {
             InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
                     .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-            
+
             //이미 이전에 시작된 인터뷰인 경우
             if (interviewSession.getCurrentQuestionNum() > 0) {
                 throw InterviewExceptions.ALREADY_STARTED_INTERVIEW.toException();
             }
-            
+
             String document = interviewSession.getContentText();
 
             StreamObserver<NestRequest> grpcStream = clovaGrpcSttService.startStreaming(
@@ -90,7 +104,8 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                     (text) -> {
                         try {
                             String wsSessionId = session.getId();
-                            transcriptionBufferMap.computeIfAbsent(wsSessionId, k -> new StringBuilder()).append(text).append(" ");
+                            transcriptionBufferMap.computeIfAbsent(wsSessionId, k -> new StringBuilder()).append(text)
+                                    .append(" ");
 
                             String rawText = transcriptionBufferMap.get(wsSessionId).toString().trim();
                             String correctedText = koreanTextProcessor.correctSpacing(rawText);
@@ -155,8 +170,8 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                     .build();
 
             sendSuccess(session, interviewResponse);
-            
-            
+
+
         } catch (ApiException e) {
             log.error("연결 수립 오류 (ApiException): {}", e.getMessage(), e);
             sendError(session, e.getMessage());
@@ -167,7 +182,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             session.close(CloseStatus.SERVER_ERROR);
         }
     }
-    
+
     @Override
     public void handleBinaryMessage(@NonNull WebSocketSession session, @NonNull BinaryMessage message) {
         try {
@@ -475,11 +490,11 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
             log.error("강제 답변 종료 오류: {}", e.getMessage(), e);
         }
     }
-    
+
     private String getSessionId(WebSocketSession session) {
-        
+
         String uri = Objects.requireNonNull(session.getUri()).toString();
-        
+
         return UriComponentsBuilder.fromUriString(uri)
                 .build()
                 .getQueryParams()
@@ -488,7 +503,7 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
 
     private Long checkInterviewEnd(InterviewSession interviewSession) {
         LocalDateTime start = interviewSession.getStartedAt();
-        
+
         return Duration.between(start, LocalDateTime.now()).toMinutes();
     }
 }
