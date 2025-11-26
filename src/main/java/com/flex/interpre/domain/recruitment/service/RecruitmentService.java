@@ -53,23 +53,18 @@ public class RecruitmentService {
     
     // 공고문 추천 조회 (로그인 된 유저용)
     public Page<RecruitmentSummaryResponse> getRecommendedRecruitments(JobSeeker jobSeeker, Pageable pageable) {
-        
         if (!jobSeeker.getCumulativeEmbedding().isEmpty()) {
-            try {
-                List<Recruitment> sortedRecruitments = recruitmentIndexService.searchByVector(
-                        jobSeeker.getCumulativeEmbedding(),
-                        pageable.getPageSize()
-                );
-                
-                if (!sortedRecruitments.isEmpty()) {
-                    List<RecruitmentSummaryResponse> responses = sortedRecruitments.stream()
-                            .map(RecruitmentSummaryResponse::from)
-                            .toList();
-                    
-                    return new PageImpl<>(responses, pageable, responses.size());
-                }
-            } catch (IOException e) {
-                log.warn("벡터 검색 오류 발생 {}", e.getMessage());
+            List<Recruitment> sortedRecruitments = recruitmentIndexService.searchByVector(
+                    jobSeeker.getCumulativeEmbedding(),
+                    pageable.getPageSize()
+            );
+
+            if (!sortedRecruitments.isEmpty()) {
+                List<RecruitmentSummaryResponse> responses = sortedRecruitments.stream()
+                        .map(RecruitmentSummaryResponse::from)
+                        .toList();
+
+                return new PageImpl<>(responses, pageable, responses.size());
             }
         }
         

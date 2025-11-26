@@ -18,8 +18,9 @@ import com.flex.interpre.domain.interview.repository.QnaRepository;
 import com.flex.interpre.domain.interview.service.InterviewService;
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
 import com.flex.interpre.domain.jobSeeker.repository.JobSeekerRepository;
+import com.flex.interpre.domain.jobSeeker.service.JobSeekerProfileVectorService;
+import com.flex.interpre.domain.matching.service.AIMatchingService;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
-import com.flex.interpre.domain.recruitment.service.RecruitmentIndexService;
 import com.flex.interpre.global.exception.ApiException;
 import com.flex.interpre.global.module.embedding.ClovaEmbeddingService;
 import com.flex.interpre.global.module.stt.ClovaGrpcSttService;
@@ -61,7 +62,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequiredArgsConstructor
 @Slf4j
 public class InterviewSocketHandler extends AbstractWebSocketHandler {
-
     private final InterviewSessionRepository interviewSessionRepository;
     private final InterviewChatRepository interviewChatRepository;
     private final ClovaEmbeddingService clovaEmbeddingService;
@@ -69,11 +69,12 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
     private final InterviewRepository interviewRepository;
     private final InterviewService interviewService;
     private final ObjectMapper objectMapper;
-    private final RecruitmentIndexService recruitmentIndexService;
+    private final JobSeekerProfileVectorService jobSeekerProfileVectorService;
     private final ClovaGrpcSttService clovaGrpcSttService;
     private final JobSeekerRepository jobSeekerRepository;
     private final InterviewReportRepository interviewReportRepository;
     private final KoreanTextProcessor koreanTextProcessor;
+    private final AIMatchingService aiMatchingService;
 
     private final ConcurrentHashMap<String, StreamObserver<NestRequest>> grpcStreamMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, StringBuilder> transcriptionBufferMap = new ConcurrentHashMap<>();
@@ -220,6 +221,160 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
         answerProcessed.remove(wsSessionId);
     }
 
+    @Transactional
+    protected void sendQuestion(WebSocketSession session, String sessionId, String transcription) throws IOException {
+
+        InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
+                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
+
+        Integer currentQuestionNumber = interviewSession.getCurrentQuestionNum();
+        UUID interviewId = interviewSession.getInterviewId();
+
+        //대답에 해당하는 질문 가져오기
+        InterviewChat currentChat = interviewChatRepository.findByQuestionNum(currentQuestionNumber);
+
+        //응답 저장
+        currentChat.setAnswer(transcription);
+        interviewChatRepository.save(currentChat);
+
+        Long duration = checkInterviewEnd(interviewSession);
+        if (duration >= 10) {
+            finishInterview(session, sessionId, transcription, duration);
+            return;
+        }
+
+        List<InterviewChat> chatHistory = interviewChatRepository
+                .findByInterviewIdOrderByQuestionNum(interviewId);
+
+        String nextQuestion = interviewService.generateQuestions(interviewSession.getContentText(), chatHistory);
+
+        InterviewChat nextChat = InterviewChat.builder()
+                .interviewId(interviewId)
+                .questionNum(currentQuestionNumber + 1)
+                .question(nextQuestion)
+                .answer(null)
+                .build();
+
+        interviewChatRepository.save(nextChat);
+
+        interviewSession.setCurrentQuestionNum(currentQuestionNumber + 1);
+        interviewSessionRepository.save(interviewSession);
+
+        currentQuestions.put(session.getId(), nextQuestion);
+
+        byte[] AudioData = interviewService.tts(nextQuestion);
+        String audioBase64 = Base64.getEncoder().encodeToString(AudioData);
+
+        InterviewResponse response = InterviewResponse.builder()
+                .type(InterviewResponse.ResponseType.QUESTION)
+                .question(nextQuestion)
+                .audio(audioBase64)
+                .build();
+
+        sendSuccess(session, response);
+    }
+
+    // 면접 종료 -> 채용 공고 추천
+    @Transactional
+    protected void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration) throws IOException {
+        InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId)) // 인터뷰 세션 조회
+                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
+        Interview interview = interviewRepository.findById(interviewSession.getInterviewId()) // 인터뷰 조회
+                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
+        // 질의응답 내역
+        List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(interviewSession.getInterviewId());
+
+        // Redis에 저장된 채팅 기록 Qna 객체로 변환
+        List<Qna> qnas = chatHistory.stream().map(chat -> Qna.from(chat, interview)).toList();
+
+        String fullTranscript = qnas.stream()
+                .map(qna -> String.format("질문: %s\n답변: %s", qna.getQuestion(), qna.getAnswer()))
+                .collect(Collectors.joining("\n\n"));
+
+        // 인터뷰 기록 벡터 임베딩
+        List<Double> embedding = clovaEmbeddingService.embed(fullTranscript);
+        interview.setEmbedding(embedding);
+        interview.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")) + " 면접 기록");
+
+        // 면접 분석
+        InterviewAnalysisResult analysisResult = interviewService.analyzeInterview(fullTranscript);
+
+        // 구직자 로딩
+        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(interviewSession.getJobSeekerId());
+
+        // 면접 임베딩 누적 (없으면 인터뷰 임베딩 사용)
+        List<Recruitment> finalRecommendations = new ArrayList<>(); // 최종 추천할 공고문리스트
+        List<Double> newEmbedding = interview.getEmbedding();
+
+        if (newEmbedding != null && !newEmbedding.isEmpty()) {
+            List<Double> currentCumulative = jobSeeker.getCumulativeEmbedding();
+            int oldCount = jobSeeker.getInterviews().size() - 1;
+
+            List<Double> updated;
+            if (!currentCumulative.isEmpty() && oldCount > 0) {
+                updated = IntStream.range(0, newEmbedding.size())
+                        .mapToObj(i -> (currentCumulative.get(i) * oldCount + newEmbedding.get(i)) / (oldCount + 1))
+                        .toList();
+            } else {
+                updated = newEmbedding; // 첫 인터뷰
+            }
+
+            jobSeeker.setCumulativeEmbedding(updated);
+            jobSeekerRepository.save(jobSeeker);
+
+            // searchVector <- 업데이트된 누적 벡터
+            List<Double> searchVector = updated;
+
+            // AI 기반 리랭킹 추천 호출
+            finalRecommendations = aiMatchingService.recommendForInterview(jobSeeker, searchVector);
+        }
+
+        // 면접 누적 벡터 -> 구직자 프로필 벡터 업데이트
+        jobSeekerProfileVectorService.updateProfileEmbedding(jobSeeker.getId());
+
+        // 면접 리포트 저장
+        InterviewReport interviewReport = InterviewReport.builder()
+                .interview(interview)
+                .aiFeedback(analysisResult.aiFeedback())
+                .strengths(analysisResult.strengths())
+                .weaknesses(analysisResult.weaknesses())
+                .competencyScores(analysisResult.competencyScores())
+                .recommendations(finalRecommendations) // 추천 목록 반영
+                .build();
+        interview.setInterviewReport(interviewReport);
+
+        // db 저장
+        qnaRepository.saveAll(qnas);
+        interview.setDurationSecond(duration);
+        interviewRepository.save(interview);
+
+        // 종료 메세지 + 오디오 //
+        String closingMessage = String.format(
+                "수고하셨습니다. %d분간 총 %d개의 질문에 답변해 주셨습니다. 오늘 면접 참여해 주셔서 감사합니다.",
+                duration,
+                chatHistory.size()
+        );
+
+        byte[] audioData = interviewService.tts(closingMessage);
+        String audioBase64 = Base64.getEncoder().encodeToString(audioData);
+
+        InterviewResponse response = InterviewResponse.builder()
+                .type(InterviewResponse.ResponseType.END)
+                .question(closingMessage)
+                .audio(audioBase64)
+                .report(InterviewReportDto.from(interviewReport))
+                .build();
+
+        sendSuccess(session, response);
+
+        // 세션 종료
+        interviewChatRepository.deleteAll(chatHistory);
+        interviewSessionRepository.delete(interviewSession);
+    }
+
+
+    // 내부 메서드 //
+
     private void cancelAnswerCheckTimer(String wsSessionId) {
         ScheduledFuture<?> existingTimer = answerCheckTimers.remove(wsSessionId);
         if (existingTimer != null && !existingTimer.isDone()) {
@@ -346,188 +501,9 @@ public class InterviewSocketHandler extends AbstractWebSocketHandler {
                 .getFirst("sessionId");
     }
 
-    @Transactional
-    protected void sendQuestion(WebSocketSession session, String sessionId, String transcription) throws IOException {
-
-        InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
-                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
-        Integer currentQuestionNumber = interviewSession.getCurrentQuestionNum();
-        UUID interviewId = interviewSession.getInterviewId();
-
-        //대답에 해당하는 질문 가져오기
-        InterviewChat currentChat = interviewChatRepository.findByQuestionNum(currentQuestionNumber);
-
-        //응답 저장
-        currentChat.setAnswer(transcription);
-        interviewChatRepository.save(currentChat);
-
-        Long duration = checkInterviewEnd(interviewSession);
-        if (duration >= 1) {
-            finishInterview(session, sessionId, transcription, duration);
-            return;
-        }
-
-        List<InterviewChat> chatHistory = interviewChatRepository
-                .findByInterviewIdOrderByQuestionNum(interviewId);
-
-        String nextQuestion = interviewService.generateQuestions(interviewSession.getContentText(), chatHistory);
-
-        InterviewChat nextChat = InterviewChat.builder()
-                .interviewId(interviewId)
-                .questionNum(currentQuestionNumber + 1)
-                .question(nextQuestion)
-                .answer(null)
-                .build();
-
-        interviewChatRepository.save(nextChat);
-
-        interviewSession.setCurrentQuestionNum(currentQuestionNumber + 1);
-        interviewSessionRepository.save(interviewSession);
-
-        currentQuestions.put(session.getId(), nextQuestion);
-
-        byte[] AudioData = interviewService.tts(nextQuestion);
-        String audioBase64 = Base64.getEncoder().encodeToString(AudioData);
-
-        InterviewResponse response = InterviewResponse.builder()
-                .type(InterviewResponse.ResponseType.QUESTION)
-                .question(nextQuestion)
-                .audio(audioBase64)
-                .build();
-
-        sendSuccess(session, response);
-
-
-    }
-
     private Long checkInterviewEnd(InterviewSession interviewSession) {
         LocalDateTime start = interviewSession.getStartedAt();
 
         return Duration.between(start, LocalDateTime.now()).toMinutes();
-    }
-
-    @Transactional
-    protected void finishInterview(WebSocketSession session, String sessionId, String lastTranscription, Long duration)
-            throws IOException {
-        // 인터뷰 세션
-        InterviewSession interviewSession = interviewSessionRepository.findById(UUID.fromString(sessionId))
-                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
-        Interview interview = interviewRepository.findById(interviewSession.getInterviewId())
-                .orElseThrow(InterviewExceptions.INVALID_SESSION_ID::toException);
-
-        // 질의응답 내역
-        List<InterviewChat> chatHistory = interviewChatRepository.findByInterviewIdOrderByQuestionNum(
-                interviewSession.getInterviewId());
-
-        //Redis에 저장된 채팅 기록 Qna 객체로 변환
-        List<Qna> qnas = chatHistory.stream().map(chat -> Qna.from(chat, interview)).toList();
-
-        String fullTranscript = qnas.stream()
-                .map(qna -> String.format("질문: %s\n답변: %s", qna.getQuestion(), qna.getAnswer()))
-                .collect(Collectors.joining("\n\n"));
-
-        // 인터뷰 기록 인베딩
-        List<Double> embedding = clovaEmbeddingService.embed(fullTranscript);
-        interview.setEmbedding(embedding);
-        interview.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")) + " 면접 기록");
-        interview.setQnas(qnas);
-
-        //면접 분석
-        InterviewAnalysisResult analysisResult = interviewService.analyzeInterview(fullTranscript);
-
-        /* -- 온보딩 데이터 기반 가중치 반영 -- TODO: 가중치 점수 테스트 */
-        JobSeeker jobSeeker = jobSeekerRepository.findByIdWithInterviews(interviewSession.getJobSeekerId());
-
-        // 유저의 누적 임베딩 (없으면 인터뷰 임베딩 사용)
-        List<Double> searchVector =
-                (jobSeeker.getCumulativeEmbedding() != null && !jobSeeker.getCumulativeEmbedding().isEmpty())
-                        ? jobSeeker.getCumulativeEmbedding()
-                        : embedding;
-
-        List<Recruitment> candidates = recruitmentIndexService.searchByVector(searchVector, 40);
-        Map<UUID, Double> scored = new HashMap<>(); // 공고문, 추가점수를 가지는 map
-
-        for (Recruitment job : candidates) {
-            double score = 1.0; // 기본 점수
-
-            // 희망근무지역이 같은 공고에 추가 점수 반영
-            boolean matchesArea = !Collections.disjoint(jobSeeker.getDesiredAreas(), job.getJobAreas());
-            if (matchesArea) {
-                score += 0.4;
-            }
-
-            // 희망근무지역 (하나라도 일치하면 가점)
-            boolean matchesJob =
-                    !Collections.disjoint(jobSeeker.getJobFirsts(), job.getJobFirsts()) ||
-                            !Collections.disjoint(jobSeeker.getJobSeconds(), job.getJobSeconds()) ||
-                            !Collections.disjoint(jobSeeker.getJobThirds(), job.getJobThirds());
-            if (matchesJob) {
-                score += 0.6;
-            }
-
-            scored.put(job.getId(), score);
-        }
-
-        // 최종 정렬 후 상위 5개 추천
-        List<Recruitment> finalRecommendations = candidates.stream()
-                .sorted((a, b) -> Double.compare(scored.get(b.getId()), scored.get(a.getId())))
-                .limit(5)
-                .toList();
-
-        // 면접 리포트 생성
-        InterviewReport interviewReport = InterviewReport.builder()
-                .interview(interview)
-                .aiFeedback(analysisResult.aiFeedback())
-                .strengths(analysisResult.strengths())
-                .weaknesses(analysisResult.weaknesses())
-                .competencyScores(analysisResult.competencyScores())
-                .recommendations(finalRecommendations)
-                .build();
-
-        interview.setDurationSecond(duration);
-        interview.setInterviewReport(interviewReport);
-        interviewRepository.save(interview);
-
-        List<Double> newEmbedding = interview.getEmbedding();
-
-        if (newEmbedding != null && !newEmbedding.isEmpty()) {
-            List<Double> currentCumulative = jobSeeker.getCumulativeEmbedding();
-            int oldCount = jobSeeker.getInterviews().size() - 1;
-
-            if (!currentCumulative.isEmpty() && oldCount > 0) {
-                List<Double> updated = IntStream.range(0, newEmbedding.size())
-                        .mapToObj(i -> (currentCumulative.get(i) * oldCount + newEmbedding.get(i)) / (oldCount + 1))
-                        .toList();
-                jobSeeker.setCumulativeEmbedding(updated);
-            } else {
-                // 첫 인터뷰
-                jobSeeker.setCumulativeEmbedding(newEmbedding);
-            }
-            jobSeekerRepository.save(jobSeeker);
-        }
-
-        String closingMessage = String.format(
-                "수고하셨습니다. %d분간 총 %d개의 질문에 답변해 주셨습니다. 오늘 면접 참여해 주셔서 감사합니다.",
-                duration,
-                chatHistory.size()
-        );
-
-        byte[] audioData = interviewService.tts(closingMessage);
-        String audioBase64 = Base64.getEncoder().encodeToString(audioData);
-
-        InterviewResponse response = InterviewResponse.builder()
-                .type(InterviewResponse.ResponseType.END)
-                .question(closingMessage)
-                .audio(audioBase64)
-                .report(InterviewReportDto.from(interviewReport))
-                .build();
-
-        sendSuccess(session, response);
-
-        interviewChatRepository.deleteAll(chatHistory);
-        interviewSessionRepository.delete(interviewSession);
-
     }
 }

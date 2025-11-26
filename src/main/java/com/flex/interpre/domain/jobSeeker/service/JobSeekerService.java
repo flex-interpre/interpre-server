@@ -18,37 +18,15 @@ import java.util.List;
 @PreAuthorize("hasRole('JOB_SEEKER')")
 public class JobSeekerService {
     private final JobSeekerRepository jobSeekerRepository;
+    private final JobSeekerProfileVectorService jobSeekerProfileVectorService;
 
     @Transactional
     public MyJobSeekerInfo updateMyInfo(JobSeeker jobSeeker, UpdateMyJobSeekerInfo request) {
         jobSeeker.update(request);
 
+        // 온보딩 기반 벡터 반영
+        jobSeekerProfileVectorService.updateProfileEmbedding(jobSeeker.getId());
+
         return MyJobSeekerInfo.from(jobSeeker);
-    }
-
-    @Transactional(readOnly = true)
-    public List<RecruitmentSummaryResponse> getBookmarks(JobSeeker jobSeeker) {
-        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
-                .orElseThrow();
-
-        return jobSeekerWithBookmarks.getBookmarkedRecruitments().stream().map(RecruitmentSummaryResponse::from).toList();
-    }
-
-    @Transactional
-    public void addBookmark(JobSeeker jobSeeker, Recruitment recruitment) {
-        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
-                .orElseThrow();
-
-        jobSeekerWithBookmarks.getBookmarkedRecruitments().add(recruitment);
-        jobSeekerRepository.save(jobSeekerWithBookmarks);
-    }
-
-    @Transactional
-    public void deleteBookmark(JobSeeker jobSeeker, Recruitment recruitment) {
-        JobSeeker jobSeekerWithBookmarks = jobSeekerRepository.findByIdWithBookmarks(jobSeeker.getId())
-                .orElseThrow();
-
-        jobSeekerWithBookmarks.getBookmarkedRecruitments().remove(recruitment);
-        jobSeekerRepository.save(jobSeekerWithBookmarks);
     }
 }

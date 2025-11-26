@@ -3,7 +3,6 @@ package com.flex.interpre.domain.jobSeeker.entity;
 import com.flex.interpre.domain.document.entity.Document;
 import com.flex.interpre.domain.interview.entity.Interview;
 import com.flex.interpre.domain.jobSeeker.dto.UpdateMyJobSeekerInfo;
-import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.global.constant.*;
 import com.flex.interpre.global.security.authentication.AccountPrincipal;
 import jakarta.persistence.*;
@@ -93,14 +92,27 @@ public class JobSeeker implements AccountPrincipal {
     @Column(name = "job_third")
     @Builder.Default
     private Set<JobThird> jobThirds = new HashSet<>();
-    
-    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
-    List<Interview> interviews;
+
+    // 자소서/포트폴리오
     @Builder.Default
     @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
     private Set<Document> documents = new HashSet<>();
-    
-    
+
+    // 면접
+    @OneToMany(mappedBy = "jobSeeker", fetch = FetchType.LAZY)
+    List<Interview> interviews;
+
+    // 면접 누적 임베딩
+    @Column(name = "cumulative_embedding")
+    @Builder.Default
+    private List<Double> cumulativeEmbedding = new ArrayList<>();
+
+    // 구직자 프로필 벡터 (면접+북마크+피드백+온보딩)
+    @Column(name = "job_seeker_profile_embedding")
+    @Builder.Default
+    private List<Double> profileEmbedding = new ArrayList<>();
+
+
     // 구직자 메서드
     
     // 인증용 role 반환
@@ -117,18 +129,4 @@ public class JobSeeker implements AccountPrincipal {
         this.jobSeconds = request.jobSeconds();
         this.jobThirds = request.jobThirds();
     }
-    
-    @ManyToMany
-    @JoinTable(
-            name = "job_seeker_bookmarks",
-            joinColumns = @JoinColumn(name = "job_seeker_id"),
-            inverseJoinColumns = @JoinColumn(name = "recruitment_id")
-    )
-    @Builder.Default
-    private Set<Recruitment> bookmarkedRecruitments = new HashSet<>();
-    
-    @Column(name = "cumulative_embedding")
-    @Builder.Default
-    private List<Double> cumulativeEmbedding = new ArrayList<>();
-    
 }

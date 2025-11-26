@@ -1,6 +1,7 @@
 package com.flex.interpre.domain.jobSeeker.controller;
 
 import com.flex.interpre.domain.jobSeeker.entity.JobSeeker;
+import com.flex.interpre.domain.jobSeeker.service.BookmarkService;
 import com.flex.interpre.domain.recruitment.dto.response.RecruitmentSummaryResponse;
 import com.flex.interpre.domain.recruitment.entity.Recruitment;
 import com.flex.interpre.domain.jobSeeker.service.JobSeekerService;
@@ -16,14 +17,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/jobseekers")
 @PreAuthorize("hasRole('JOB_SEEKER')")
 public class JobSeekerController {
-
     private final JobSeekerService jobSeekerService;
+    private final BookmarkService bookmarkService;
 
     @GetMapping("/me")
     @Operation(summary = "내 구직자 정보 조회")
@@ -42,22 +44,22 @@ public class JobSeekerController {
     @GetMapping("/bookmarks")
     @Operation(summary = "북마크 조회 api 요청")
     public ApiResponse<List<RecruitmentSummaryResponse>> getBookmarks(@AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker) {
-        return ApiResponse.ok(jobSeekerService.getBookmarks(jobSeeker));
+        return ApiResponse.ok(bookmarkService.getBookmarks(jobSeeker));
     }
 
     @PostMapping("/bookmarks/{recruitment}")
     @Operation(summary = "북마크 추가 api")
     public ApiResponse<Void> addBookmark(@AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker,
-                                         @PathVariable Recruitment recruitment) {
-        jobSeekerService.addBookmark(jobSeeker, recruitment);
+                                         @PathVariable UUID recruitmentId) {
+        bookmarkService.addBookmark(jobSeeker, recruitmentId);
         return ApiResponse.ok();
     }
 
     @DeleteMapping("/bookmarks/{recruitment}")
     @Operation(summary = "북마크 제거 api")
     public ApiResponse<Void> deleteBookmark(@AuthenticationPrincipal @Parameter(hidden = true) JobSeeker jobSeeker,
-                                            @PathVariable Recruitment recruitment) {
-        jobSeekerService.deleteBookmark(jobSeeker, recruitment);
+                                            @PathVariable UUID recruitmentId) {
+        bookmarkService.removeBookmark(jobSeeker, recruitmentId);
         return ApiResponse.ok();
     }
 }
